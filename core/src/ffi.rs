@@ -95,6 +95,15 @@ pub extern "C" fn wb_worktree_add_from(root: *const c_char, dir: *const c_char, 
     })
 }
 
+/// Creates a new project folder at `dir` (and `git init`s it when `init` != 0). JSON `{ok, error}`.
+#[no_mangle]
+pub extern "C" fn wb_project_create(dir: *const c_char, init: u8) -> *mut c_char {
+    outcome(match arg(dir) {
+        Some(d) => crate::git::project_create(Path::new(d), init != 0),
+        None => Err("bad arguments".into()),
+    })
+}
+
 /// JSON array of the projects the user's agents worked in (see `agents::AgentProject`), filtered by
 /// `query` (name, pinyin, path) and ranked; an empty query lists them all, most recently used first.
 #[no_mangle]

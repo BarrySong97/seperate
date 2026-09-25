@@ -153,6 +153,11 @@ enum Core {
         try check(wb_worktree_add_from(root, dir, branch, base), fallback: "git worktree add 失败")
     }
 
+    /// A new project folder with a README; `git` also makes it a repo on `main` with a first commit.
+    static func projectCreate(dir: String, git: Bool) throws {
+        try check(wb_project_create(dir, git ? 1 : 0), fallback: "新建项目失败")
+    }
+
     /// A folder the user's agents worked in, folded into its Git repo (see core/src/agents.rs).
     struct AgentProject: Decodable, Hashable {
         let root: String, name: String, codex: Int, claude: Int, lastUsed: Int, git: Bool, scratch: Bool

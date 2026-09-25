@@ -55,6 +55,19 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(s.workspaces.first { $0.id == first }?.projectRoots, [a, b])
     }
 
+    @MainActor func testCreatingAProjectAddsItAndOpensAShell() throws {
+        let s = Store()
+        try s.createProject(name: "fresh", in: dir.path, git: false)
+        let root = dir.appendingPathComponent("fresh").path
+        XCTAssertEqual(s.active.projectRoots, [root])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root + "/README.md"))
+        XCTAssertEqual(s.layout.focusedPane?.active.flatMap(s.session)?.cwd, root, "a terminal opens in the new project")
+        XCTAssertThrowsError(try s.createProject(name: "fresh", in: dir.path, git: false), "an existing non-empty folder is refused")
+
+        try s.createProject(name: "repo", in: dir.path, git: true)
+        XCTAssertEqual(s.project(Core.repoInfo(dir.appendingPathComponent("repo").path)?.root ?? "")?.isGit, true)
+    }
+
     @MainActor func testOrderColorAndPinsPersist() {
         let s = Store()
         let f = folders(3)

@@ -93,10 +93,11 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
             b.action = sel
             footer.addSubview(b)
         }
-        // "添加项目" picks a folder; ▾ also offers the projects your agents have worked in.
+        // "添加项目" picks a folder; ▾ also offers a brand-new project and the ones your agents have worked in.
         addMore.onClick = { [weak self] in
             guard let self else { return }
             let m = NSMenu()
+            m.addItem(ActionItem("新建项目…") { [weak self] in self?.store.promptNewProject() })
             m.addItem(ActionItem("选择文件夹…") { [weak self] in self?.store.pickProject() })
             m.addItem(ActionItem("从 Agent 使用过的项目导入…") { [weak self] in self?.store.showImport() })
             m.popUp(positioning: nil, at: NSPoint(x: 0, y: self.addMore.bounds.height + 2), in: self.addMore)

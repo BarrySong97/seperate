@@ -106,6 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     @objc func toggleSidebar(_ sender: Any?) { store.toggleSidebar() }
     @objc func addProject(_ sender: Any?) { store.pickProject() }
+    @objc func newProject(_ sender: Any?) { store.promptNewProject() }
     @objc func newShell(_ sender: Any?) { store.newShellInFocusedPane() }
     @objc func splitRight(_ sender: Any?) { store.splitFocused(store.layout.focusedPaneID, edge: .right) }
     @objc func splitDown(_ sender: Any?) { store.splitFocused(store.layout.focusedPaneID, edge: .bottom) }
@@ -181,6 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             item("命令面板", #selector(showPalette(_:)), "p"),
             .separator(),
             item("新建终端 Tab", #selector(newShell(_:)), "t"),
+            item("新建项目…", #selector(newProject(_:)), "n"),
             item("添加项目…", #selector(addProject(_:)), "o"),
             item("用默认编辑器打开 Worktree", #selector(openInEditor(_:)), "o", [.command, .option]),
             item("收件箱", #selector(toggleInbox(_:)), "i"),

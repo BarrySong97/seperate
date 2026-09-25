@@ -12,6 +12,7 @@ char *wb_worktree_remove(const char *root, const char *path, uint8_t force);  /*
 char *wb_branch_delete(const char *root, const char *branch);                 /* {ok, error}; merged only */
 char *wb_list_branches(const char *root);                                     /* {local:[{name,updated}], remote:[...]} */
 char *wb_worktree_add_from(const char *root, const char *dir, const char *branch, const char *base); /* branch NULL = detached */
+char *wb_project_create(const char *dir, uint8_t init);                      /* {ok, error}; refuses a non-empty folder */
 char *wb_scan_sessions(const char *home, uint32_t days);   /* days = 0: no age limit */
 char *wb_agent_projects(const char *home, const char *query);   /* [{root,name,codex,claude,last_used,git,scratch}] */
 char *wb_project_icon(const char *root);   /* plain path, not JSON */

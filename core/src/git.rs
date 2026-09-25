@@ -219,6 +219,25 @@ pub fn worktree_add_from(root: &Path, dir: &Path, branch: Option<&str>, base: &s
     git(root, &args).map(|_| ())
 }
 
+/// A brand-new project folder at `dir` with a README; with `init`, also a Git repo on `main` with a
+/// first commit (worktrees need a commit to start from). Refuses a folder that already has files in it.
+pub fn project_create(dir: &Path, init: bool) -> Result<(), String> {
+    if fs::read_dir(dir).map(|mut e| e.next().is_some()).unwrap_or(false) {
+        return Err(format!("{} 已经存在且不是空文件夹", display(dir)));
+    }
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let name = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    fs::write(dir.join("README.md"), format!("# {name}\n")).map_err(|e| e.to_string())?;
+    if init {
+        git(dir, &["init", "-q", "-b", "main"])?;
+        fs::write(dir.join(".gitignore"), ".DS_Store\n").map_err(|e| e.to_string())?;
+        git(dir, &["add", "."])?;
+        // Without a configured user.name / email the commit fails; the repo is still usable.
+        let _ = git(dir, &["commit", "-q", "-m", "Initial commit"]);
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -241,6 +260,20 @@ mod tests {
         run(&["add", "."])?;
         run(&["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "init"])?;
         Some(d)
+    }
+
+    #[test]
+    fn creates_a_project_and_refuses_a_non_empty_folder() {
+        let d = temp().join("fresh");
+        project_create(&d, false).unwrap();
+        assert!(d.join("README.md").exists() && !d.join(".git").exists());
+        assert!(project_create(&d, false).is_err(), "a folder with files in it is left alone");
+
+        let g = temp().join("repo");
+        if project_create(&g, true).is_ok() {
+            assert!(g.join(".git").exists() && g.join(".gitignore").exists());
+            assert_eq!(repo_info(&g).map(|r| r.root), Some(display(&normalize(&g))));
+        }
     }
 
     #[test]

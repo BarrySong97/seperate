@@ -719,6 +719,15 @@ final class Store {
         refreshProjects()
     }
 
+    /// Makes a new folder `name` in `parent`, adds it to the active workspace and opens a shell in it.
+    func createProject(name: String, in parent: String, git: Bool) throws {
+        let dir = (parent as NSString).appendingPathComponent(name)
+        try Core.projectCreate(dir: dir, git: git)
+        addProject(path: dir)
+        let root = Core.repoInfo(dir)?.root ?? dir
+        if let p = project(root), let wt = worktrees(of: p).first { newSession(.shell, in: wt) }
+    }
+
     /// Moves a worktree inside its project, before `before` (nil = to the end).
     func reorderWorktree(_ path: String, before: String?) {
         guard path != before, let wt = worktree(path: path), let p = project(wt.projectID) else { return }
@@ -911,6 +920,11 @@ final class Store {
     func promptNewWorktree(in p: Project) {
         guard let w = NSApp.keyWindow ?? NSApp.mainWindow else { return }
         NewWorktreeSheet(store: self, project: p).present(on: w)
+    }
+
+    func promptNewProject() {
+        guard let w = NSApp.keyWindow ?? NSApp.mainWindow else { return }
+        NewProjectSheet(store: self).present(on: w)
     }
 
     func promptNewWorkspace() {

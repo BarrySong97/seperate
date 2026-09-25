@@ -140,6 +140,7 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
             out.append(PaletteEntry(kind: .command(title, action), section: .commands, title: title, keys: keys,
                                     symbol: symbol, pinyin: Core.pinyinKeys(title)))
         }
+        command("新建项目…", "plus.rectangle.on.folder", ["new create project git init"]) { store.promptNewProject() }
         command("添加项目…", "folder.badge.plus", ["add project"]) { store.pickProject() }
         command("从 Agent 使用过的项目导入…", "square.and.arrow.down", ["import agent project codex claude"]) { store.showImport() }
         command("新建 Workspace…", "plus.square.on.square", ["new workspace"]) { store.promptNewWorkspace() }
