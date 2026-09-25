@@ -13,6 +13,8 @@ VERSION="${VERSION:-0.1.0}"
 BUILD="${BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 IDENTITY="${CODESIGN_IDENTITY:--}"
 # In-app updates: the appcast attached to the latest GitHub Release, verified with this EdDSA key.
+# Checks happen at launch and from "检查更新…" only: the scheduled interval is set to a year so
+# Sparkle's own timer never fires while the app stays open.
 FEED_URL="https://github.com/BarrySong97/seperate/releases/latest/download/appcast.xml"
 SPARKLE_PUBLIC_KEY="hBvX/YMu49uiKG3IQMxZ9UFKkA+e0vr6Zjy7SiFw40k="
 
@@ -62,7 +64,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>SUFeedURL</key><string>$FEED_URL</string>
   <key>SUPublicEDKey</key><string>$SPARKLE_PUBLIC_KEY</string>
   <key>SUEnableAutomaticChecks</key><true/>
-  <key>SUScheduledCheckInterval</key><integer>86400</integer>
+  <key>SUScheduledCheckInterval</key><integer>31536000</integer>
 </dict>
 </plist>
 PLIST

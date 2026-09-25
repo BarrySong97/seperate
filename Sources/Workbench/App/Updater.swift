@@ -26,8 +26,8 @@ final class Updater: NSObject {
     private var isBundled: Bool { Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil }
 
     /// Release builds start checking right away. Debug builds start only when "检查更新…" is used.
-    /// Sparkle's own schedule only fires once the interval since the last check has passed, so a
-    /// release build also checks quietly on every launch (a found update shows as the top-bar pill).
+    /// Updates are checked at launch (quietly; a found update shows as the top-bar pill) and from
+    /// "检查更新…". Sparkle's own timer is effectively off (SUScheduledCheckInterval, build-app.sh).
     func start() {
         #if !DEBUG
         startIfNeeded()

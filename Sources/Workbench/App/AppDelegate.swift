@@ -171,7 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         sub("Seperate", [
             item("关于 Seperate", #selector(NSApplication.orderFrontStandardAboutPanel(_:)), ""),
             item("检查更新…", #selector(checkForUpdates(_:)), ""),
-            item("自动检查更新", #selector(toggleAutoCheck(_:)), ""),
+            item("启动时检查更新", #selector(toggleAutoCheck(_:)), ""),
             item("自动下载并安装更新", #selector(toggleAutoInstall(_:)), ""),
             .separator(),
             item("隐藏 Seperate", #selector(NSApplication.hide(_:)), "h"),
