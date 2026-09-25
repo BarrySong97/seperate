@@ -47,4 +47,14 @@ The workflow builds the app, packages the DMG and the update zip, signs the zip 
 
 One-time setup, already done for this repo: `scripts/sparkle-keys.sh` creates the Sparkle key pair in the login Keychain and stores the private key as the `SPARKLE_PRIVATE_KEY` secret. The public key is in `scripts/build-app.sh`.
 
-To sign with a Developer ID and notarize the app and the DMG (removes every Gatekeeper warning), add these repository secrets: `MACOS_CERT_P12` (base64 .p12), `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`.
+To sign with a Developer ID and notarize the app and the DMG (removes every Gatekeeper warning), add these repository secrets (same names and values as a Tauri app's signing setup):
+
+| Secret | Value |
+| --- | --- |
+| `APPLE_CERTIFICATE` | The "Developer ID Application" certificate exported as .p12, base64-encoded |
+| `APPLE_CERTIFICATE_PASSWORD` | Password chosen when exporting the .p12 |
+| `APPLE_ID` | Apple ID email of the developer account |
+| `APPLE_PASSWORD` | App-specific password from appleid.apple.com |
+| `APPLE_TEAM_ID` | Team ID, e.g. `UKPFND4844` |
+
+With them set, the release is signed and notarized, and the DMG background drops its Gatekeeper hint.

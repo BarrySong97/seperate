@@ -32,17 +32,21 @@ func text(_ s: String, font: NSFont, color c: NSColor, centerX: CGFloat? = nil, 
 // MARK: DMG background, 600×400 points. Finder draws the installer icon centered at (300, 190).
 
 let serif = NSFont(descriptor: NSFont.systemFont(ofSize: 26, weight: .semibold).fontDescriptor.withDesign(.serif)!, size: 26)!
+// Signed builds use the plain background; unsigned ones add a footer explaining the one-time Gatekeeper step.
+for (suffix, unsigned) in [("", false), ("-unsigned", true)] {
 for scale in [1, 2] as [CGFloat] {
     let data = png(NSSize(width: 600, height: 400), scale: scale) { size in
         color(0xF3F2EC).setFill(); NSRect(origin: .zero, size: size).fill()
         text("Seperate", font: serif, color: color(0x23241F), x: 32, top: 26, height: size.height)
         text("在一个窗口里并排运行 Claude Code、Codex 和终端", font: .systemFont(ofSize: 12), color: color(0x6A6B63), x: 33, top: 62, height: size.height)
         text("双击图标开始安装", font: .systemFont(ofSize: 14, weight: .medium), color: color(0x5B5A4A), centerX: 300, top: 292, height: size.height)
+        guard unsigned else { return }
         color(0xDCDBD2).setFill(); NSRect(x: 32, y: 56, width: 536, height: 1).fill()
         text("首次打开被拦截？前往 系统设置 → 隐私与安全性，点“仍要打开”。", font: .systemFont(ofSize: 11),
              color: color(0x8E8F86), centerX: 300, top: 356, height: size.height)
     }
-    try data.write(to: out.appendingPathComponent(scale == 1 ? "dmg-background.png" : "dmg-background@2x.png"))
+    try data.write(to: out.appendingPathComponent("dmg-background\(suffix)\(scale == 1 ? "" : "@2x").png"))
+}
 }
 
 // MARK: Installer icon: the app icon with a download badge.

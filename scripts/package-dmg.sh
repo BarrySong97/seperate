@@ -25,7 +25,8 @@ if [[ ! -x "$VENV/bin/dmgbuild" ]]; then
   "$VENV/bin/pip" install --quiet "dmgbuild==1.6.7"
 fi
 BG="$ROOT/build/dmg-background.tiff"
-tiffutil -cathidpicheck "$ROOT/Resources/Installer/dmg-background.png" "$ROOT/Resources/Installer/dmg-background@2x.png" -out "$BG" 2>/dev/null
+VARIANT=""; [[ "${CODESIGN_IDENTITY:--}" == "-" ]] && VARIANT="-unsigned"   # unsigned: footer explains Gatekeeper
+tiffutil -cathidpicheck "$ROOT/Resources/Installer/dmg-background$VARIANT.png" "$ROOT/Resources/Installer/dmg-background$VARIANT@2x.png" -out "$BG" 2>/dev/null
 
 rm -f "$DMG"
 "$VENV/bin/dmgbuild" -s "$ROOT/scripts/dmg-settings.py" -D installer="$INSTALLER" -D background="$BG" "Seperate $VERSION" "$DMG" >/dev/null
