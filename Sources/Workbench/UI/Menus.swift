@@ -64,6 +64,7 @@ enum Menus {
         }
         if let hidden = WorktreeDialogs.hiddenMenu(store, p) { m.addItem(hidden) }
         m.addItem(ActionItem("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: p.rootPath)]) })
+        m.addItem(ActionItem("复制路径") { store.copyPath(p.rootPath) })
         m.addItem(.separator())
         let others = store.workspaces.filter { $0.id != store.activeID }
         let move = NSMenuItem(title: "移到 Workspace", action: nil, keyEquivalent: "")
