@@ -4,13 +4,9 @@ A macOS workbench for running coding agents (Claude Code, Codex) and shells side
 
 ## Install
 
-1. Download `Seperate-<version>.dmg` from the [latest release](https://github.com/BarrySong97/seperate/releases/latest).
-2. Drag **Seperate** into **Applications**.
-3. The app is not notarized yet, so the first launch is blocked by Gatekeeper. Right-click the app and choose **Open**, or run:
-
-   ```sh
-   xattr -dr com.apple.quarantine /Applications/Seperate.app
-   ```
+1. Download `Seperate-<version>.dmg` from the [latest release](https://github.com/BarrySong97/seperate/releases/latest) and open it.
+2. Double-click **安装 Seperate**. The installer copies Seperate into Applications (replacing an older copy) and opens it.
+3. Builds are not notarized yet, so macOS blocks the installer the first time. Open **System Settings → Privacy & Security** and click **Open Anyway**. You only do this once. Seperate itself then opens without a warning.
 
 Requires macOS 14 or later on Apple Silicon.
 
@@ -34,7 +30,8 @@ Requirements: Xcode 26, Rust (`rustup`), Apple Silicon.
 scripts/setup-ghostty.sh         # once: builds GhosttyKit into Vendor/ (downloads Zig)
 scripts/build-app.sh debug --open
 swift test
-scripts/package-dmg.sh           # build/Seperate-<version>.dmg and .zip
+scripts/package-dmg.sh           # build/Seperate-<version>.dmg (styled, with installer) and .zip
+swift scripts/make-installer-assets.swift   # after changing the DMG background or installer icon
 ```
 
 ## Releasing
@@ -50,4 +47,4 @@ The workflow builds the app, packages the DMG and the update zip, signs the zip 
 
 One-time setup, already done for this repo: `scripts/sparkle-keys.sh` creates the Sparkle key pair in the login Keychain and stores the private key as the `SPARKLE_PRIVATE_KEY` secret. The public key is in `scripts/build-app.sh`.
 
-To sign with a Developer ID and notarize, add these repository secrets: `MACOS_CERT_P12` (base64 .p12), `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`.
+To sign with a Developer ID and notarize the app and the DMG (removes every Gatekeeper warning), add these repository secrets: `MACOS_CERT_P12` (base64 .p12), `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`.

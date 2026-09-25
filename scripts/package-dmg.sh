@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds a release Seperate.app and packages it for distribution:
-#   build/Seperate-<version>.dmg  drag-to-install image for new users
+#   build/Seperate-<version>.dmg  styled DMG with the double-click installer (安装 Seperate.app)
 #   build/Seperate-<version>.zip  archive Sparkle downloads for in-app updates
 # Env: VERSION, BUILD, CODESIGN_IDENTITY (see build-app.sh); PACKAGE_ONLY=1 packages the existing build/Seperate.app
 set -euo pipefail
@@ -16,12 +16,21 @@ ZIP="$ROOT/build/Seperate-$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 
-STAGE="$(mktemp -d)"
-trap 'rm -rf "$STAGE"' EXIT
-cp -R "$APP" "$STAGE/"
-ln -s /Applications "$STAGE/Applications"
+INSTALLER="$("$ROOT/scripts/build-installer.sh" | tail -1)"
+
+# dmgbuild writes the Finder layout directly, so no AppleScript or Finder automation is needed.
+VENV="$ROOT/.deps/dmgbuild"
+if [[ ! -x "$VENV/bin/dmgbuild" ]]; then
+  python3 -m venv "$VENV"
+  "$VENV/bin/pip" install --quiet "dmgbuild==1.6.7"
+fi
+BG="$ROOT/build/dmg-background.tiff"
+tiffutil -cathidpicheck "$ROOT/Resources/Installer/dmg-background.png" "$ROOT/Resources/Installer/dmg-background@2x.png" -out "$BG" 2>/dev/null
 
 rm -f "$DMG"
-hdiutil create -volname "Seperate $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >/dev/null
+"$VENV/bin/dmgbuild" -s "$ROOT/scripts/dmg-settings.py" -D installer="$INSTALLER" -D background="$BG" "Seperate $VERSION" "$DMG" >/dev/null
+if [[ "${CODESIGN_IDENTITY:--}" != "-" ]]; then
+  codesign --force --timestamp --sign "$CODESIGN_IDENTITY" "$DMG"
+fi
 echo "$DMG"
 echo "$ZIP"

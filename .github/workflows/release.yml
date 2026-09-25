@@ -59,6 +59,17 @@ jobs:
       - name: Package
         run: PACKAGE_ONLY=1 scripts/package-dmg.sh
 
+      # The notarized DMG covers the installer inside it, so a Developer ID build opens with no warning.
+      - name: Notarize DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        if: env.CODESIGN_IDENTITY != '' && env.APPLE_ID != ''
+        run: |
+          xcrun notarytool submit "build/Seperate-$VERSION.dmg" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --wait
+          xcrun stapler staple "build/Seperate-$VERSION.dmg"
+
       - name: Create draft release
         run: |
           gh release create "$GITHUB_REF_NAME" --draft --generate-notes --title "Seperate $VERSION" \

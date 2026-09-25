@@ -33,6 +33,12 @@ let package = Package(
             path: "Sources/SeperateHook",
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        // "安装 Seperate.app": the double-click installer inside the DMG.
+        .executableTarget(
+            name: "SeperateInstaller",
+            path: "Sources/SeperateInstaller",
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         .testTarget(
             name: "WorkbenchTests",
             dependencies: ["Workbench"],
