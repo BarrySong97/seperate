@@ -13,6 +13,8 @@ jobs:
     runs-on: macos-26
     env:
       GH_TOKEN: ${{ github.token }}
+      HAS_CERT: ${{ secrets.APPLE_CERTIFICATE != '' }}
+      HAS_NOTARY: ${{ secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +31,7 @@ jobs:
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        if: env.APPLE_CERTIFICATE != ''
+        if: env.HAS_CERT == 'true'
         run: |
           KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
           security create-keychain -p "" "$KEYCHAIN"
@@ -50,7 +52,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-        if: env.CODESIGN_IDENTITY != '' && env.APPLE_ID != ''
+        if: env.HAS_CERT == 'true' && env.HAS_NOTARY == 'true'
         run: |
           ditto -c -k --keepParent build/Seperate.app "$RUNNER_TEMP/notarize.zip"
           xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_PASSWORD" --wait
@@ -65,7 +67,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-        if: env.CODESIGN_IDENTITY != '' && env.APPLE_ID != ''
+        if: env.HAS_CERT == 'true' && env.HAS_NOTARY == 'true'
         run: |
           xcrun notarytool submit "build/Seperate-$VERSION.dmg" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_PASSWORD" --wait
           xcrun stapler staple "build/Seperate-$VERSION.dmg"
