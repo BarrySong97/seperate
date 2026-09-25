@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/deps
+      - name: Test
+        run: scripts/build-core.sh && swift test
+      - name: Package
+        run: scripts/package-dmg.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Seperate-${{ github.sha }}
+          path: build/Seperate-*.dmg
+          retention-days: 14

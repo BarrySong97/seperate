@@ -1,0 +1,11 @@
+.DS_Store
+.deps/
+Vendor/
+.build/
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.log
+.run.log
+core/target/

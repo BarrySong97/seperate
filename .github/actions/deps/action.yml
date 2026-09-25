@@ -1,0 +1,21 @@
+name: Build dependencies
+description: Restores or builds GhosttyKit (libghostty) and caches the Rust core build.
+runs:
+  using: composite
+  steps:
+    - name: Cache GhosttyKit
+      id: ghostty
+      uses: actions/cache@v4
+      with:
+        path: |
+          Vendor/GhosttyKit.xcframework
+          Vendor/ghostty-resources
+        key: ghostty-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/setup-ghostty.sh') }}
+    - name: Build GhosttyKit
+      if: steps.ghostty.outputs.cache-hit != 'true'
+      shell: bash
+      run: scripts/setup-ghostty.sh
+    - name: Cache Rust core
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: core

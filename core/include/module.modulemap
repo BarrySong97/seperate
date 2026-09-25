@@ -1,0 +1,4 @@
+module WorkbenchCore {
+    header "workbench_core.h"
+    export *
+}
