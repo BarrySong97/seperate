@@ -100,3 +100,4 @@ pnpm build    # next build
 pnpm lint     # eslint
 pnpm upload   # node scripts/upload-media.mjs
 ```
+部署在 Vercel:项目的 Root Directory 设为 `website`,其余由 `website/vercel.json` 决定(pnpm 安装、`pnpm build`、发布 `out/`)。详见 `website/README.md` 的 Deploying 一节。

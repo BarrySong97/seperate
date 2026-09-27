@@ -8,6 +8,25 @@ pnpm dev          # http://localhost:3000
 pnpm build        # static site in out/
 ```
 
+## Deploying (Vercel)
+
+The site is a static export, so Vercel only has to run the build and serve `out/`. `vercel.json` says so:
+pnpm (the version in `package.json#packageManager`, 10.14.0) installs from the lockfile, `pnpm build` runs,
+`out/` is published, `/changelog` is served from `changelog.html` (clean URLs), and hashed assets under
+`/_next/static/` are cached for a year.
+
+In the Vercel project settings:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | `website` |
+| Framework Preset | Other (vercel.json sets `framework: null`) |
+| Build / Install / Output | leave empty: vercel.json decides (`pnpm build`, `pnpm install --frozen-lockfile`, `out`) |
+| Node.js | 20 or newer |
+| Domain | `sperate.4real.ltd` (must match `site.url` in `src/lib/site.ts`) |
+
+No environment variables are needed to build: R2 credentials are only for `pnpm upload` on your machine.
+
 ## Layout
 
 | Path | What |
