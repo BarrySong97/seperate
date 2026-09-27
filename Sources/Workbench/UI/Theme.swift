@@ -1,3 +1,9 @@
+// @purpose "Bone" palette: the app's color, font tokens and the Ghostty terminal color overrides.
+// @role    Read by every UI view; ghosttyConfig is layered over the user's Ghostty config by the terminal runtime.
+// @deps    AppKit (NSColor, NSFont).
+// @gotcha  Dark-only (window forces darkAqua); selection is by lightness, not a hue accent. Keep
+//          ghosttyConfig hex values in sync with pane / selBG / selFG / accent. See docs/modules/ui/README.md
+
 import AppKit
 
 /// "Bone" palette: cmux's warm olive-gray ground, selection by lightness instead of a hue accent.

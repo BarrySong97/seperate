@@ -1,3 +1,8 @@
+// @purpose Store tests (persistence, projects/workspaces, pins, worktrees) plus the shared useTempDataDir helper.
+// @role    XCTest for Store; useTempDataDir() is used by every test file that builds a Store.
+// @deps    XCTest, Workbench (@testable), Core (SQLite via FFI), git (worktree tests)
+// @gotcha  Always call useTempDataDir() before Store() so the real seperate.db is never touched.
+//          docs/modules/model/README.md
 import XCTest
 @testable import Workbench
 

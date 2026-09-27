@@ -1,3 +1,8 @@
+// @purpose Plain value types of the app: Project, Worktree, AgentSession, Workspace, status/phase enums, InboxItem.
+// @role    Shared vocabulary for Store, UI and Core bridging; no behavior beyond small derived properties.
+// @deps    Foundation, LayoutModel (a Workspace embeds its layout)
+// @gotcha  Codable types are persisted (via Store → SQLite / legacy state.json): renaming fields or enum raw
+//          values breaks saved data. Worktree deliberately has no branch. docs/modules/model/README.md
 import Foundation
 
 /// A repository (or plain folder) the user works in. Worktrees hang off it.

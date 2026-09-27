@@ -1,0 +1,4 @@
+// @purpose <what this file is for, one sentence>
+// @role    <its role in the module/system; who calls it, what it calls>
+// @deps    <key dependencies: modules / libs / external services>
+// @gotcha  <pitfalls / invariants; module doc, e.g. docs/modules/model/README.md>

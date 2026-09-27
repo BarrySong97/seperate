@@ -1,3 +1,7 @@
+// @purpose The install operation itself: pick the destination, stage a copy, strip quarantine, swap it into place.
+// @role    Used by InstallerController (window) and main.swift (--install-to); knows nothing about UI.
+// @deps    Foundation (FileManager, NSDictionary for Info.plist), /usr/bin/xattr.
+// @gotcha  bundleID must match the app's CFBundleIdentifier (dev.workbench.app); the stage folder must sit next to the destination for the atomic replace; see docs/modules/installer/README.md
 import Foundation
 
 /// The install itself, separate from the window so it can run headless (`--install-to`) in tests.

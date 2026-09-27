@@ -1,3 +1,7 @@
+// @purpose Tests for pane-tree operations: open/move tabs, split, close, presets, pane moves, JSON round-trip.
+// @role    XCTest for LayoutModel (pure value type, no Store needed).
+// @deps    XCTest, Workbench (@testable)
+// @gotcha  Checks tree shape (sibling vs nested splits, collapse on close) — update with normalize rules. docs/modules/layout/README.md
 import XCTest
 @testable import Workbench
 

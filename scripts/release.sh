@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose Starts a release: pushes HEAD, tags v<version> and pushes the tag.
+# @role    Dev, only when the user asks to release; the tag triggers .github/workflows/release.yml.
+# @deps    git with push access to origin; gh for `gh run watch`.
+# @gotcha  Refuses a dirty tree or existing tag; version must be X.Y.Z; see docs/modules/release/README.md
 # Starts a release: tags v<version> on the current commit and pushes the tag.
 # GitHub Actions (.github/workflows/release.yml) then builds, signs and publishes it.
 # Usage: scripts/release.sh 0.2.0

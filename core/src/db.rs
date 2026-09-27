@@ -1,3 +1,8 @@
+// @purpose The app's own SQLite database: workspaces, projects, worktree order/aliases, settings, sessions.
+// @role    Behind wb_db_open/load/save; the whole State is exchanged with Swift as one JSON document.
+// @deps    rusqlite (bundled SQLite), serde
+// @gotcha  Migrations are append-only (PRAGMA user_version); save replaces everything in one tx.
+//          docs/modules/core/README.md
 //! The app's own data in SQLite: workspaces (color, order, pane layout), the projects in each
 //! (one workspace per project, in the user's order), worktree names, settings, and the sessions
 //! the app owns something about (started here, or pinned). Conversation content stays in the

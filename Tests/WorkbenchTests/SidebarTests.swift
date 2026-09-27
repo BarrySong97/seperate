@@ -1,3 +1,8 @@
+// @purpose Regression test: sidebar collapse/expand state survives data reloads.
+// @role    XCTest driving SidebarView's NSOutlineView over a real Store.
+// @deps    XCTest, AppKit, Workbench (@testable)
+// @gotcha  Skips when the saved state has no project rows; AppKit autosaves expansion across runs.
+//          docs/modules/ui/README.md
 import XCTest
 import AppKit
 @testable import Workbench

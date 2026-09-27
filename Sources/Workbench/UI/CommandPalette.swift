@@ -1,3 +1,10 @@
+// @purpose In-window ⌘K / ⌘P command palette overlay: search sessions, workspaces, create actions and commands.
+// @role    Shown by RootView.showPalette (via store.paletteHandler); builds entries, ranks via PaletteSearch,
+//          runs the pick back through Store (focus/open/addTab/newSession/switchWorkspace).
+// @deps    AppKit (NSTableView), Store, PaletteSearch, Fuzzy, Core.pinyinKeys, Widgets.
+// @gotcha  Installs a local keyDown monitor (⌘1–9) that must be removed on close; TerminalView lets ⌘K/⌘P
+//          through to the menu. Focus returns to the terminal via onClose. See docs/modules/ui/README.md
+
 import AppKit
 
 /// ⌘K / ⌘P palette, shown inside the window over a dimmed backdrop (enso-style overlay rather than a

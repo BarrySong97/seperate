@@ -1,0 +1,8 @@
+# Codex 项目配置。若项目已有 .codex/config.toml,把下面这段合并进去即可。
+#
+# 启用 hooks(实验特性)。不同版本 flag 名可能不同,先看 `codex --version`:
+#   · 早期实验版:codex_hooks = true
+#   · 较新版本:hooks = true(部分版本默认开启,用 false 关闭)
+# 启用后,Codex 会自动发现 .codex/hooks.json;首次运行用 /hooks 审阅并「信任」脚本后才会执行。
+[features]
+codex_hooks = true

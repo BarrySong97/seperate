@@ -1,3 +1,7 @@
+// @purpose Pinyin search keys so Chinese titles match typed pinyin.
+// @role    Behind wb_pinyin_keys; used by agents.rs scoring.
+// @deps    pinyin crate
+// @gotcha  initials stays 1:1 with input chars; owner maps full back. docs/modules/core/README.md
 //! Pinyin search keys, so Chinese titles can be found by typing pinyin ("daima" / "dm" → 代码).
 
 use pinyin::ToPinyin;

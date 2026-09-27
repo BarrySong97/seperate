@@ -1,3 +1,7 @@
+// @purpose Repository/worktree discovery from git's files, plus worktree/branch/project mutations.
+// @role    Behind wb_repo_info / wb_worktree_* / wb_branch_* / wb_project_create; used by agents.rs.
+// @deps    std::fs, /usr/bin/git (mutations and status only)
+// @gotcha  Discovery must not spawn git (~70 ms each). docs/modules/core/README.md
 //! Repository and worktree discovery by reading git's own files.
 //! No `git` process is spawned: on this machine spawning anything costs ~70 ms.
 //!

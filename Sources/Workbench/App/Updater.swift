@@ -1,3 +1,7 @@
+// @purpose In-app updates through Sparkle, surfaced as a quiet top-bar pill instead of a popup.
+// @role    Started by AppDelegate; menu items and TopBarView read/drive it via Updater.shared.
+// @deps    Sparkle (SPUStandardUpdaterController), Info.plist SU* keys written by build-app.sh
+// @gotcha  No SUFeedURL (swift run) = no-op; DEBUG never auto-checks. docs/modules/app/README.md
 import AppKit
 import Sparkle
 

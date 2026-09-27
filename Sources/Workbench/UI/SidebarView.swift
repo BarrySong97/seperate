@@ -1,3 +1,10 @@
+// @purpose Sidebar: projects → worktrees → sessions outline, footer (add project, inbox bell), workspace switcher.
+// @role    Created by MainWindowController; observes Store and calls it for open / reorder / switch; hosts
+//          InboxPopover and the WorkspaceSwitcher.
+// @deps    AppKit (NSOutlineView), Store, Menus, Widgets, InboxPopover.
+// @gotcha  Expansion state is AppKit's autosave (per-workspace autosaveName), not app state; outline items
+//          need stable identity (keyed p:/w:/s:). Covered by SidebarTests. See docs/modules/ui/README.md
+
 import AppKit
 
 /// Projects → worktrees → sessions of the active workspace as an NSOutlineView, with the Arc-style
@@ -296,6 +303,18 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
             guard let it = outline.item(atRow: r) as? Item else { continue }
             if case .project(let p) = it.kind, p.name.contains(name) { toggle(it, row: r); return }
             if case .worktree(let w) = it.kind, w.alias.contains(name) { toggle(it, row: r); return }
+        }
+    }
+    var debugBell: NSView { bell }
+    /// Dev aid: expands every collapsed project and worktree row (never collapses one).
+    func debugExpandAll() {
+        var r = 0
+        while r < outline.numberOfRows {
+            if let it = outline.item(atRow: r) as? Item, outline.isExpandable(it), !outline.isItemExpanded(it) {
+                expanded.insert(it.key)
+                outline.expandItem(it)
+            }
+            r += 1
         }
     }
     func debugRows() -> String {

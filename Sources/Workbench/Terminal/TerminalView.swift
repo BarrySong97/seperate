@@ -1,6 +1,13 @@
+// @purpose One libghostty surface (pty + GPU renderer) hosted in an NSView, with keyboard/IME/mouse.
+// @role    Created and destroyed by Store per running session; reports title/pwd/bell/exit via callbacks.
+// @deps    GhosttyKit, AppKit, Carbon.HIToolbox (key codes), GhosttyRuntime
+// @gotcha  Surface starts only once on screen at real size; call destroy() before release.
+//          docs/modules/terminal/README.md
 import AppKit
 import Carbon.HIToolbox
+import CoreImage
 import GhosttyKit
+import IOSurface
 
 /// One libghostty surface: a real terminal (pty + GPU renderer) living in an NSView.
 /// The view is created once per running session and re-parented when the layout changes.
@@ -523,5 +530,39 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
     private func binding(_ action: String) {
         guard let surface else { return }
         _ = action.withCString { ghostty_surface_binding_action(surface, $0, UInt(action.utf8.count)) }
+    }
+
+    // MARK: Website screenshots (ShotRenderer)
+
+    /// The text on screen right now (no selection involved, so nothing shows up highlighted).
+    func visibleText() -> String? {
+        guard let surface else { return nil }
+        let sel = ghostty_selection_s(
+            top_left: ghostty_point_s(tag: GHOSTTY_POINT_VIEWPORT, coord: GHOSTTY_POINT_COORD_TOP_LEFT, x: 0, y: 0),
+            bottom_right: ghostty_point_s(tag: GHOSTTY_POINT_VIEWPORT, coord: GHOSTTY_POINT_COORD_BOTTOM_RIGHT, x: 0, y: 0),
+            rectangle: false)
+        var t = ghostty_text_s()
+        guard ghostty_surface_read_text(surface, sel, &t) else { return nil }
+        defer { ghostty_surface_free_text(surface, &t) }
+        return String(cString: t.text)
+    }
+
+    /// Presses one key (e.g. kVK_Return with "\r", kVK_DownArrow with nil), straight to Ghostty.
+    func pressKey(_ keyCode: Int, text: String?) {
+        for type in [NSEvent.EventType.keyDown, .keyUp] {
+            guard let e = NSEvent.keyEvent(with: type, location: .zero, modifierFlags: [], timestamp: 0,
+                                           windowNumber: window?.windowNumber ?? 0, context: nil, characters: text ?? "",
+                                           charactersIgnoringModifiers: text ?? "", isARepeat: false, keyCode: UInt16(keyCode))
+            else { return }
+            sendKey(type == .keyDown ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE, event: e, translationEvent: e,
+                    text: type == .keyDown ? text : nil, composing: false)
+        }
+    }
+
+    /// The last frame Ghostty drew into this view's IOSurface layer.
+    func renderedImage() -> CGImage? {
+        guard let c = layer?.contents, CFGetTypeID(c as CFTypeRef) == IOSurfaceGetTypeID() else { return nil }
+        let ci = CIImage(ioSurface: c as! IOSurface)
+        return CIContext().createCGImage(ci, from: ci.extent)
     }
 }

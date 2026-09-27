@@ -1,3 +1,9 @@
+// @purpose Installs per-launch Claude/Codex wrapper scripts + hooks file and builds each terminal's env.
+// @role    install() at Store init; environment()/terminalCommand() used when Store starts a TerminalView;
+//          the hooks it installs run the SeperateHook helper, which reports back to Store.
+// @deps    Foundation, Store.dataDir, bundled seperate-hook executable, ~/.codex/config.toml (read only)
+// @gotcha  Never edit the user's Claude/Codex config; without the bundled helper agents start plain (no status).
+//          docs/modules/model/README.md, docs/topics/agent-hooks.md
 import Foundation
 
 /// How Seperate learns what an agent is doing, without touching the user's own Claude/Codex config.
@@ -68,7 +74,11 @@ enum AgentHooks {
 
     /// The command typed into a new terminal: the agent through its wrapper, or the plain command.
     static func terminalCommand(for s: AgentSession) -> String? {
-        guard let plain = s.launchCommand else { return nil }
+        guard var plain = s.launchCommand else { return nil }
+        // Website screenshots: the user's own status line (usage meters etc.) stays out of the picture.
+        if Core.shotsRoot != nil, s.kind == .claude {
+            plain += #" --settings '{"statusLine":{"type":"command","command":"true"}}'"#
+        }
         guard helper != nil, s.kind != .shell else { return plain }
         return "\"$SEPERATE_BIN\"/" + plain   // "$SEPERATE_BIN"/codex resume <id>
     }

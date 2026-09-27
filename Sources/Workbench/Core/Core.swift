@@ -1,3 +1,8 @@
+// @purpose Swift bridge to the Rust core: wraps the wb_* C functions and decodes their JSON.
+// @role    Called by Store and UI (dialogs, palette, import) for DB, git, sessions, icons, pinyin.
+// @deps    WorkbenchCore xcframework (core/include/workbench_core.h), Foundation
+// @gotcha  Every returned char* must go through wb_free; DBState keys must mirror db::State.
+//          docs/modules/core/README.md
 import Foundation
 import WorkbenchCore
 
@@ -165,12 +170,18 @@ enum Core {
 
     /// Projects Codex / Claude have been used in, matching `query` (name, pinyin, path), best first.
     static func agentProjects(query: String = "") -> [AgentProject] {
-        call(wb_agent_projects(NSHomeDirectory(), query), as: [AgentProject].self) ?? []
+        let all = call(wb_agent_projects(NSHomeDirectory(), query), as: [AgentProject].self) ?? []
+        return shotsRoot.map { root in all.filter { $0.root.hasPrefix(root) } } ?? all
     }
+
+    /// Website screenshots (ShotRenderer) only see the demo projects under this folder, nothing else of the user's.
+    static let shotsRoot = ProcessInfo.processInfo.environment["SEPERATE_SHOTS_ROOT"].map { $0.hasSuffix("/") ? $0 : $0 + "/" }
 
     /// Every Codex + Claude conversation, whatever its age (~100 ms for ~800).
     static func scanSessions() -> [AgentSession] {
-        (call(wb_scan_sessions(NSHomeDirectory(), 0), as: [ScannedSession].self) ?? []).map {
+        (call(wb_scan_sessions(NSHomeDirectory(), 0), as: [ScannedSession].self) ?? [])
+            .filter { s in shotsRoot.map { s.cwd.hasPrefix($0) } ?? true }
+            .map {
             AgentSession(id: $0.id, kind: AgentKind(rawValue: $0.kind) ?? .shell, agentSessionID: $0.agentSessionId,
                          cwd: $0.cwd, title: $0.title, lastActivity: Date(timeIntervalSince1970: TimeInterval($0.lastActivity)))
         }

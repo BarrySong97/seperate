@@ -1,0 +1,46 @@
+{
+  "sourceExts": [
+    ".swift",
+    ".rs",
+    ".sh",
+    ".py",
+    ".mjs"
+  ],
+  "sourceRoots": [
+    "Sources",
+    "core/src",
+    "Tests",
+    "scripts"
+  ],
+  "ignoreDirs": [
+    "node_modules",
+    ".git",
+    ".build",
+    ".deps",
+    "build",
+    "Vendor",
+    "target",
+    "DerivedData",
+    "website",
+    "templates",
+    "_module"
+  ],
+  "moduleMap": {
+    "scripts/hooks/": "hooks",
+    "scripts/check-docs.mjs": "hooks",
+    "Sources/Workbench/App/": "app",
+    "Sources/Workbench/Model/": "model",
+    "Sources/Workbench/Layout/": "layout",
+    "Sources/Workbench/Terminal/": "terminal",
+    "Sources/Workbench/UI/": "ui",
+    "Sources/Workbench/Core/": "core",
+    "core/src/": "core",
+    "Sources/SeperateHook/": "hook",
+    "Sources/SeperateInstaller/": "installer",
+    "scripts/": "release"
+  },
+  "nonModuleDirs": [
+    "WorkbenchTests",
+    "hooks"
+  ]
+}

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose Builds the Swift app (+ Rust core) and assembles, Info.plist-stamps and codesigns build/Seperate.app.
+# @role    Dev (debug/release, --open), package-dmg.sh, release.yml and release-local.sh.
+# @deps    swift, build-core.sh, Vendor/GhosttyKit.xcframework + ghostty-resources, codesign; env VERSION, BUILD, CODESIGN_IDENTITY.
+# @gotcha  Holds SUFeedURL and the Sparkle public key (SUPublicEDKey); ad-hoc sign unless CODESIGN_IDENTITY set; see docs/modules/release/README.md
 # Builds the app and wraps the binary in a runnable Seperate.app bundle.
 # (The Swift target is still called Workbench; only the product the user sees is named Seperate.)
 # Usage: scripts/build-app.sh [debug|release] [--open]

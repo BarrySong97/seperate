@@ -1,3 +1,8 @@
+// @purpose macOS system notifications and the Dock badge for sessions that need the user.
+// @role    Owned by Store (store.notifier); Store posts/removes per session; click-through calls back onOpen.
+// @deps    AppKit, UserNotifications
+// @gotcha  One notification per session (identifier = session id); silently no-op outside an .app bundle
+//          (tests, swift run). docs/modules/model/README.md
 import AppKit
 import UserNotifications
 

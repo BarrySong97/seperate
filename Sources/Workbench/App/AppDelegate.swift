@@ -1,3 +1,8 @@
+// @purpose App lifecycle, the main menu bar, and mapping Ghostty keybindings onto panes/tabs.
+// @role    Starts GhosttyRuntime, Store, MainWindowController and Updater; menu actions call Store.
+// @deps    AppKit, GhosttyKit, Store, MainWindowController, Updater, TerminalView
+// @gotcha  Single-window app: Ghostty new-window/fullscreen actions are swallowed; the DEBUG
+//          WORKBENCH_DEMO hooks are dev-only. docs/modules/app/README.md
 import AppKit
 import GhosttyKit
 

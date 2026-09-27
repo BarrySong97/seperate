@@ -1,3 +1,9 @@
+// @purpose The single app-state object: workspaces, projects/worktrees, sessions, live terminals, agent phases.
+// @role    Created once by AppDelegate; every view reads it and registers via observe(); owns persistence,
+//          the hook event receiver, the inbox and the Notifier; calls Core (Rust FFI) for git/scan/SQLite.
+// @deps    AppKit, os.Logger, Core (WorkbenchCore FFI), LayoutModel, AgentHooks, Notifier, TerminalView
+// @gotcha  @MainActor; every mutation must end in notify(Change) (which also schedules the debounced save);
+//          pick the narrowest Change so views don't rebuild. Details: docs/modules/model/README.md
 import AppKit
 import os
 
@@ -542,6 +548,13 @@ final class Store {
     }
 
     static let notifyDoneAfter: TimeInterval = 30
+
+    /// Website screenshots only: puts a session into an inbox state that would normally come from its hooks.
+    func shotsSetPhase(_ id: String, _ new: AgentPhase?, need: NeedKind? = nil) {
+        if let need { needKind[id] = need }
+        setPhase(id, new)
+        notify(.session(id))
+    }
 
     // MARK: Inbox
 

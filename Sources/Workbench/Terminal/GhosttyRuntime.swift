@@ -1,3 +1,7 @@
+// @purpose Owns the single libghostty app instance, its config, and its C callbacks.
+// @role    Started by AppDelegate; routes surface actions to TerminalView, then to onSurfaceAction.
+// @deps    GhosttyKit (libghostty C API), AppKit, NSPasteboard, Theme.ghosttyConfig
+// @gotcha  All ghostty_* calls on main; only wakeup_cb is off-main. docs/modules/terminal/README.md
 import AppKit
 import GhosttyKit
 
@@ -67,12 +71,16 @@ final class GhosttyRuntime {
     func tick() { if let app { ghostty_app_tick(app) } }
 
     /// User's own Ghostty config first (fonts, keybinds), then our theme on top so the chrome matches.
+    /// Extra Ghostty config lines layered last (website screenshots set a larger font). Set before `start()`.
+    var extraConfig = ""
+
     private func makeConfig() -> ghostty_config_t? {
         guard let cfg = ghostty_config_new() else { return nil }
         ghostty_config_load_default_files(cfg)
         ghostty_config_load_recursive_files(cfg)
-        let theme = Theme.ghosttyConfig
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("workbench-ghostty.conf")
+        let theme = Theme.ghosttyConfig + (extraConfig.isEmpty ? "" : "\n" + extraConfig + "\n")
+        // Screenshot runs use their own file so the running app's config file is never rewritten.
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(extraConfig.isEmpty ? "workbench-ghostty.conf" : "workbench-ghostty-shots.conf")
         if (try? theme.write(to: url, atomically: true, encoding: .utf8)) != nil {
             ghostty_config_load_file(cfg, url.path)
         }

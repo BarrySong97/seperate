@@ -1,3 +1,7 @@
+// @purpose Entry point of the "安装 Seperate.app" installer: parses CLI flags, then runs headless or shows the window.
+// @role    Executable of the SeperateInstaller target; builds an Installation and hands it to InstallerController (or installs directly with --install-to).
+// @deps    AppKit; Installation.swift, InstallerWindow.swift; the Seperate.app payload in the bundle's Resources.
+// @gotcha  Payload defaults to Contents/Resources/Seperate.app, so a bare `swift run` needs --payload; see docs/modules/installer/README.md
 import AppKit
 
 // "安装 Seperate.app": the double-click installer shown in the DMG. It carries Seperate.app in its Resources.

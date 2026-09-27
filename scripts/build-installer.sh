@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose Wraps build/Seperate.app into the double-click installer build/安装 Seperate.app.
+# @role    Called by package-dmg.sh; needs build-app.sh release to have run first.
+# @deps    swift (SeperateInstaller product), PlistBuddy, codesign, Resources/Installer/InstallerIcon.icns; env CODESIGN_IDENTITY.
+# @gotcha  Version/build are copied from the payload's Info.plist; the payload keeps its own signature (no --deep); see docs/modules/release/README.md
 # Wraps build/Seperate.app inside the double-click installer: build/安装 Seperate.app
 # Run scripts/build-app.sh release first. Env: CODESIGN_IDENTITY (default: ad-hoc "-")
 set -euo pipefail

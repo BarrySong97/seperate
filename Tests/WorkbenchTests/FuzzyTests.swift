@@ -1,3 +1,7 @@
+// @purpose Tests for fuzzy/pinyin matching and command-palette ranking.
+// @role    XCTest for Fuzzy and PaletteSearch (UI module).
+// @deps    XCTest, Workbench (@testable), Core (pinyin keys via FFI)
+// @gotcha  Pinyin cases depend on the Rust core's pinyin table. docs/modules/ui/README.md
 import XCTest
 @testable import Workbench
 

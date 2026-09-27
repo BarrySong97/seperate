@@ -1,3 +1,9 @@
+// @purpose Subsequence fuzzy matcher with word-start / run bonuses and pinyin (initials + full) matching.
+// @role    Pure helper used by PaletteSearch; no UI. Covered by Tests/WorkbenchTests/FuzzyTests.swift.
+// @deps    Foundation, Core.PinyinKeys (pinyin computed by the Rust core).
+// @gotcha  Hits are character offsets into the original title (pinyin hits mapped back via owner);
+//          scoring changes reorder palette results. See docs/modules/ui/README.md
+
 import Foundation
 
 /// Subsequence fuzzy matching for the command palette: every query character must appear in

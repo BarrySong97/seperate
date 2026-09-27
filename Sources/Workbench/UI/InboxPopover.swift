@@ -1,3 +1,10 @@
+// @purpose The bell's NSPopover listing sessions that need you, results to review, and running ones.
+// @role    Owned lazily by SidebarView (bell / ⌘I via store.inboxHandler); reads store.inboxItems and
+//          calls store.openFromInbox / markInboxRead.
+// @deps    AppKit (NSPopover), Store (inbox model), Widgets, RelativeTime.
+// @gotcha  Subscribes to Store only while open and unobserves in popoverDidClose; opening a row counts
+//          as read. See docs/modules/ui/README.md
+
 import AppKit
 
 /// The bell's popover: sessions that need you (permission, question, plan), finished turns and
@@ -35,6 +42,16 @@ final class InboxPopover: NSObject, NSPopoverDelegate {
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
         token = store.observe { [weak self] _ in self?.content.reload() }
     }
+
+    #if DEBUG
+    /// Website screenshots: the popover's content view, filled and sized, without a popover window.
+    static func debugContent(store: Store) -> NSView {
+        let v = InboxView(store: store)
+        v.onResize = { [weak v] size in v?.setFrameSize(size) }
+        v.reload()
+        return v
+    }
+    #endif
 
     func popoverDidClose(_ notification: Notification) {
         if let token { store.unobserve(token) }

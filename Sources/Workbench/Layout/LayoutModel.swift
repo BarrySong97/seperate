@@ -1,3 +1,8 @@
+// @purpose Pure value model of a workspace's pane layout: a split tree of panes holding session tabs.
+// @role    Stored inside each Workspace; mutated only through Store.mutateLayout; rendered by WorkspaceView.
+// @deps    Foundation only (no AppKit)
+// @gotcha  Keep the tree normalized (no single-child or same-axis nested splits; sizes parallel children);
+//          a session id sits in at most one pane. Persisted as JSON. docs/modules/layout/README.md
 import Foundation
 
 /// The window's pane layout: a split tree whose leaves are panes, each holding tabs of sessions.

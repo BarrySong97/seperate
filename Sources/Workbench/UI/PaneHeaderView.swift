@@ -1,3 +1,9 @@
+// @purpose Per-pane header: tab strip plus origin line (project / worktree, status, session id, worktree actions).
+// @role    Owned by PaneView (WorkspaceView.swift); TabView drags session ids / panes; actions call Store
+//          (activate, closeTab, splitFocused, closePane) and Menus.
+// @deps    AppKit (NSDraggingSource), Store, Widgets (IconButton, ChipView, DotView), Menus, ExternalApp.
+// @gotcha  Updated in place; tab views are reused by session id. Height is fixed (34 + 26). See docs/modules/ui/README.md
+
 import AppKit
 
 /// Tab strip + origin line on top of each pane. Updated in place; tab views are reused by session id.

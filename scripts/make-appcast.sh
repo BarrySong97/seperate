@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose Signs the update zip with the Sparkle EdDSA key and writes build/appcast.xml for one release.
+# @role    release.yml "Sign update and write appcast" step and release-local.sh.
+# @deps    Sparkle sign_update in .build/artifacts, PlistBuddy, build/Seperate.app; env GITHUB_REPOSITORY (optional).
+# @gotcha  Private key comes in as a temp file; appcast holds only the latest item and download URL assumes tag v<version>; see docs/modules/release/README.md
 # Writes the Sparkle appcast for one release: build/appcast.xml
 # Usage: scripts/make-appcast.sh <version> <zip> <private-key-file> [release-notes.html]
 set -euo pipefail

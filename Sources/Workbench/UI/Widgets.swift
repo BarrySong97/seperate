@@ -1,3 +1,8 @@
+// @purpose Small shared AppKit building blocks: icons, IconButton, DotView, ChipView, ActionItem, scrollers, helpers.
+// @role    Used by all UI views and Menus; no Store access.
+// @deps    AppKit, QuartzCore, Theme; bundled codex-icon.png (optional).
+// @gotcha  Status DotView respects Reduce Motion; RelativeTime strings are Chinese. See docs/modules/ui/README.md
+
 import AppKit
 
 // Small AppKit building blocks shared by the sidebar, pane headers and top bar.

@@ -1,0 +1,10 @@
+#!/bin/sh
+# @purpose 提交前 sensor:文档同步 + lint/test 的最后兜底(任何 AI 工具、甚至手工提交都生效)。
+# @role    强制层(慢一点的层);与 AI 工具无关的 git 级闸门。
+# 安装(二选一):
+#   1) git config core.hooksPath scripts/hooks   且  chmod +x scripts/hooks/pre-commit
+#   2) 用 lefthook / husky 调用本脚本
+set -e
+node scripts/check-docs.mjs
+# 取消注释,接上你的项目检查:
+# scripts/build-core.sh && swift test   # 较慢(数分钟),CI 已跑;需要时再打开

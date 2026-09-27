@@ -1,3 +1,7 @@
+// @purpose The installer's single window and its steps: welcome, quit running app, installing, done, newer installed, failed.
+// @role    InstallerController, created by main.swift; runs Installation on a background queue and ejects the DMG on finish.
+// @deps    AppKit, Installation; NSRunningApplication (by bundle ID) and hdiutil for eject.
+// @gotcha  Quits the running Seperate via terminate() and waits up to 30s; colors are hard-coded to the Bone theme; UI strings are Chinese; see docs/modules/installer/README.md
 import AppKit
 
 /// The installer's single window: welcome → (quit running app) → installing → done.

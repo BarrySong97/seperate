@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose Builds the Rust core (cargo --release) into Vendor/WorkbenchCore.xcframework for SwiftPM.
+# @role    Dev before `swift test`/`swift build`, build-app.sh, CI ci.yml Test step.
+# @deps    cargo (~/.cargo/bin), xcodebuild, core/include headers.
+# @gotcha  Plain `swift build` fails without this output since Vendor/ is gitignored; see docs/modules/release/README.md
 # Builds the Rust core and wraps it as Vendor/WorkbenchCore.xcframework for SwiftPM to link.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

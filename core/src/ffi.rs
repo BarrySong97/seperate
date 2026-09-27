@@ -1,3 +1,8 @@
+// @purpose C ABI (wb_* functions) the Swift app calls; turns results into JSON C strings.
+// @role    Only entry point from Swift (via Core.swift); delegates to git/sessions/agents/db/icon/text.
+// @deps    serde_json, the crate's other modules
+// @gotcha  Must stay in sync with core/include/workbench_core.h; caller frees via wb_free.
+//          docs/modules/core/README.md
 //! C ABI for the Swift app. Results are JSON strings owned by Rust; free them with `wb_free`.
 
 use std::ffi::{c_char, CStr, CString};

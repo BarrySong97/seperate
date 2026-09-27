@@ -1,3 +1,9 @@
+// @purpose Command-palette model: scopes, entries, sections and ranking. No UI.
+// @role    Entries are built by CommandPalette; rank() is called on every keystroke.
+// @deps    Foundation, Fuzzy, Core.PinyinKeys, SessionStatus.
+// @gotcha  Empty query hides the "create" section; order is score, urgency, active workspace, running,
+//          recency. See docs/modules/ui/README.md
+
 import Foundation
 
 /// What the command palette can find, and how results are grouped and ranked. No UI here.

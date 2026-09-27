@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose One-time setup: validates Apple signing/notarization details and writes all release secrets to .secrets.
+# @role    Dev by hand (interactive); also uploads .secrets to GitHub Actions secrets unless --local-only.
+# @deps    security, xcrun notarytool, Sparkle generate_keys, gh; writes APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID, SPARKLE_PRIVATE_KEY.
+# @gotcha  .secrets is gitignored and must never be committed or printed; see docs/modules/release/README.md
 # One-time setup for signed, notarized releases. Asks for the Apple signing details, checks them, and writes
 # every release secret to .secrets (gitignored, readable only by you) with the same names GitHub Actions uses:
 #   APPLE_CERTIFICATE  APPLE_CERTIFICATE_PASSWORD  APPLE_ID  APPLE_PASSWORD  APPLE_TEAM_ID  SPARKLE_PRIVATE_KEY

@@ -1,3 +1,7 @@
+// @purpose Tests for the agent → app pipe: wrapper scripts, Codex notify chaining, the hook helper's events.
+// @role    XCTest for AgentHooks and the SeperateHook executable (skipped if the helper is not built).
+// @deps    XCTest, Workbench (@testable), SeperateHook build product, DistributedNotificationCenter
+// @gotcha  Uses a temp SEPERATE_DATA_DIR (useTempDataDir); the helper must print nothing. docs/topics/agent-hooks.md
 import XCTest
 @testable import Workbench
 

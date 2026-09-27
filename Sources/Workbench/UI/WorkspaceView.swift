@@ -1,3 +1,10 @@
+// @purpose Renders store.layout as nested split containers of panes; drop targets, dividers, empty-pane picker.
+// @role    Created by MainWindowController; observes Store (layout / session / projects / workspace) and
+//          calls Store for focus, move, setSizes, addTab.
+// @deps    AppKit, Store, LayoutModel, PaneHeaderView, TerminalView (owned by Store).
+// @gotcha  Terminal views belong to Store and are re-parented, never recreated; only structural layout
+//          changes rebuild containers; keeps keyboard focus on the active terminal. See docs/modules/ui/README.md
+
 import AppKit
 
 /// Renders `store.layout` as nested split containers of panes. Pane views are kept by id and

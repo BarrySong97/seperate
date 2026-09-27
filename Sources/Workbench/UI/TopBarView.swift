@@ -1,3 +1,9 @@
+// @purpose Top bar: sidebar toggle, workspace name, layout/status summary, layout presets and update pill.
+// @role    Created by MainWindowController; observes Store and Updater.changed; calls store.apply /
+//          toggleSidebar and Updater.checkForUpdates.
+// @deps    AppKit, Store, Updater, Widgets (IconButton, Icons.preset).
+// @gotcha  Sits in the transparent title bar: mouseDown drags / double-click zooms the window. See docs/modules/ui/README.md
+
 import AppKit
 
 /// Workspace name, layout summary and preset buttons above the workspace.

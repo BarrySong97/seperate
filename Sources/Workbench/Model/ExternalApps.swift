@@ -1,3 +1,8 @@
+// @purpose Catalog of external editors/terminals a worktree can be opened in, with their icons.
+// @role    Used by menus/top bar and Store (defaultEditor setting); launches apps via NSWorkspace.
+// @deps    AppKit (NSWorkspace)
+// @gotcha  Raw values are persisted as the default_editor setting; only installed apps (by bundle id) are offered.
+//          docs/modules/model/README.md
 import AppKit
 
 /// Editors and terminals a worktree can be opened in. Only installed ones are offered, each with the

@@ -1,3 +1,10 @@
+// @purpose In-window "import from agents" panel: projects Codex / Claude worked in, multi-select into a workspace.
+// @role    Shown by RootView.showImport (via store.importHandler); queries Core.agentProjects and calls
+//          store.addProject for each checked root.
+// @deps    AppKit (NSTableView), Store, Core.agentProjects (Rust core).
+// @gotcha  Core scan is slow on first call (~0.4 s) so it runs off the main thread; results must hop back
+//          to main. Projects already added are shown greyed. See docs/modules/ui/README.md
+
 import AppKit
 
 /// "Import from agents": the projects Codex / Claude have worked in, found and searched by the Rust

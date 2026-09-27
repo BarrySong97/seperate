@@ -1,3 +1,7 @@
+# @purpose dmgbuild settings for the Seperate DMG: one installer icon on the designed background.
+# @role    Loaded by package-dmg.sh via `dmgbuild -s` with -D installer=… -D background=….
+# @deps    dmgbuild (injects `defines`), installer app and background TIFF from package-dmg.sh.
+# @gotcha  Not a runnable script (`defines` is injected); icon_locations must match make-installer-assets.swift; see docs/modules/release/README.md
 # dmgbuild settings for the Seperate DMG: one installer icon on the designed background.
 # Used by scripts/package-dmg.sh (dmgbuild -s scripts/dmg-settings.py -D installer=… -D background=…).
 import os.path

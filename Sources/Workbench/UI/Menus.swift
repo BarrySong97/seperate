@@ -1,3 +1,9 @@
+// @purpose Context and "+" menus (project, worktree, session, workspace, terminal, open-with apps), built on demand.
+// @role    Called by SidebarView, PaneHeaderView, TerminalView right-click and WorkspaceSwitcher; each item
+//          is an ActionItem closure that calls Store / WorktreeDialogs / ExternalApp.
+// @deps    AppKit (NSMenu), Store, Widgets (ActionItem, Icons), ExternalApp, WorktreeDialogs.
+// @gotcha  Menus are rebuilt every time they open, never cached; titles are Chinese. See docs/modules/ui/README.md
+
 import AppKit
 
 /// Context and "+" menus, built only when opened.

@@ -1,0 +1,4 @@
+// @purpose <这个文件是干嘛的,一句话>
+// @role    <在模块/系统里的角色;被谁调用、调用谁>
+// @deps    <关键依赖:crate / 模块 / 外部服务>
+// @gotcha  <坑 / 约束 / 不变量;相关模块文档,如 docs/modules/payments/README.md>

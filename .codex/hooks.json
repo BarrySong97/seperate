@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/hooks/guard.mjs", "timeout": 10 }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/hooks/guard-files.mjs", "timeout": 10 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/hooks/format-lint.mjs", "timeout": 60 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/check-docs.mjs --hook", "timeout": 60 }
+        ]
+      }
+    ]
+  }
+}

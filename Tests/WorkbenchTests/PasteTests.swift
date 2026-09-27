@@ -1,3 +1,7 @@
+// @purpose Tests for ⌘V into a terminal: text as is, files as escaped paths, images saved to PNG.
+// @role    XCTest for GhosttyRuntime.pasteText (Terminal module).
+// @deps    XCTest, AppKit (private NSPasteboard), Workbench (@testable)
+// @gotcha  Uses a uniquely named pasteboard so the user's clipboard is untouched. docs/modules/terminal/README.md
 import XCTest
 import AppKit
 @testable import Workbench

@@ -1,3 +1,8 @@
+// @purpose seperate-hook CLI: turns a Claude hook / Codex notify payload into a distributed notification to the app.
+// @role    Run by agents via the wrappers AgentHooks installs; Store.agentEvent receives what it posts.
+// @deps    Foundation (DistributedNotificationCenter); env SEPERATE_SESSION_ID / SEPERATE_BIN / SEPERATE_CODEX_NOTIFY
+// @gotcha  Must be fast, print nothing to stdout and always exit 0; no app code linked in (separate target).
+//          docs/modules/hook/README.md, docs/topics/agent-hooks.md
 import Foundation
 
 // Forwards an agent event to the running Seperate app. Must be quick, print nothing (Claude reads a

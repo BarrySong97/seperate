@@ -1,3 +1,8 @@
+// @purpose "新建项目" sheet: name, remembered parent folder, optional git init; creates and adds the project.
+// @role    Presented by Store.promptNewProject; calls store.createProject on confirm.
+// @deps    AppKit (NSPanel sheet), Store, UserDefaults (last parent folder, git checkbox).
+// @gotcha  Kept alive by a static `current` reference while the sheet is open. See docs/modules/ui/README.md
+
 import AppKit
 
 /// "新建项目": a name, a parent folder (remembered), and whether to start a Git repo.

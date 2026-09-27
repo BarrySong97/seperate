@@ -1,3 +1,7 @@
+// @purpose Draws the DMG backgrounds (signed and -unsigned, 1x/2x) and InstallerIcon.icns into Resources/Installer/.
+// @role    Run by hand (`swift scripts/make-installer-assets.swift`) after changing the design; outputs are committed, not built in CI.
+// @deps    AppKit, design/app-icon-1024.png, /usr/bin/iconutil.
+// @gotcha  Icon position (300,190) must match scripts/dmg-settings.py icon_locations; see docs/modules/release/README.md
 // Draws the DMG window background and the installer icon into Resources/Installer/.
 // Run after changing the design: swift scripts/make-installer-assets.swift
 import AppKit

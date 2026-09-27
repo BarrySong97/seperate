@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose Builds GhosttyKit.xcframework + ghostty resources from a pinned Ghostty commit into Vendor/.
+# @role    Dev once per clone; CI via .github/actions/deps on cache miss.
+# @deps    curl, shasum, git, Zig (downloaded to .deps/), network access to ziglang.org and github.com.
+# @gotcha  Apple Silicon only; Ghostty commit and Zig version are pinned together; unsets proxy vars; see docs/modules/release/README.md
 # Builds GhosttyKit.xcframework (libghostty) from upstream Ghostty for the app to link.
 # Everything is kept inside the repo: toolchain in .deps/, output in Vendor/ (both gitignored).
 set -euo pipefail

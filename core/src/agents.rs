@@ -1,3 +1,7 @@
+// @purpose Folds the folders agents worked in into projects (repo roots), counted and searchable.
+// @role    Behind wb_agent_projects ("import from agents"); uses sessions, git and text.
+// @deps    crate::sessions, crate::git, crate::text
+// @gotcha  Scan cached 10 s per home; skips home, / and missing folders. docs/modules/core/README.md
 //! Projects the user's agents have worked in, for "import from agents".
 //!
 //! Every Codex / Claude session records the folder it ran in. Those folders are folded into their

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose One-time setup: creates or reuses the Sparkle EdDSA key pair and stores SPARKLE_PRIVATE_KEY as a GitHub secret.
+# @role    Dev by hand; already done for this repo.
+# @deps    swift package resolve (Sparkle generate_keys), login Keychain account "seperate", gh.
+# @gotcha  A new key pair breaks updates for installed apps unless build-app.sh SUPublicEDKey is updated; see docs/modules/release/README.md
 # One-time setup for signed in-app updates.
 # Creates (or reuses) the Sparkle EdDSA key pair in the login Keychain, prints the public key for
 # scripts/build-app.sh, and stores the private key as the GitHub secret SPARKLE_PRIVATE_KEY.

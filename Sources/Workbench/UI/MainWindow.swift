@@ -1,3 +1,10 @@
+// @purpose Main window controller and RootView: sidebar | (top bar over workspace), sidebar hide/peek/resize.
+// @role    Created by AppDelegate; wires store.paletteHandler / importHandler and hosts CommandPalette
+//          and ImportPanel overlays over the workspace.
+// @deps    AppKit, Store, SidebarView, TopBarView, WorkspaceView, CommandPalette, ImportPanel.
+// @gotcha  Plain frame layout (no Auto Layout); sidebar width persisted in UserDefaults "sidebarWidth"
+//          (180–480); while peeking the sidebar is re-parented into PeekPanel. See docs/modules/ui/README.md
+
 import AppKit
 
 /// Sidebar | (top bar over workspace). Plain frame layout; the sidebar slides out (⌘B) and, while

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# @purpose Local dry run of release.yml on this Mac: sign, notarize, package, appcast, Gatekeeper check; never publishes.
+# @role    Dev only, run by hand to test the release pipeline.
+# @deps    .secrets (APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID, SPARKLE_PRIVATE_KEY), security, notarytool, stapler, spctl.
+# @gotcha  Must stay in step with release.yml; temporarily edits the keychain search list (restored on exit); see docs/modules/release/README.md
 # Local dry run of .github/workflows/release.yml: same steps, same secret names, run on this Mac.
 # Secrets are read from .secrets (KEY='value' lines, gitignored; scripts/setup-signing.sh writes it).
 # Stops before the GitHub Release: nothing is tagged, uploaded or published.

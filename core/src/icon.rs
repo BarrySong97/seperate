@@ -1,3 +1,7 @@
+// @purpose Finds a project's own favicon/app icon for its sidebar avatar.
+// @role    Behind wb_project_icon (returns a plain path, not JSON).
+// @deps    std::fs
+// @gotcha  Files over 1 MB or empty are skipped. docs/modules/core/README.md
 //! Finds a project's own icon (favicon / app icon) to use as its avatar in the sidebar.
 //! Looks at the conventional places web, Next.js, Vite, Tauri and Electron projects keep one,
 //! at the root and inside monorepo `apps/*` / `packages/*`.

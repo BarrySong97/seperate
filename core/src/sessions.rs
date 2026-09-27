@@ -1,3 +1,8 @@
+// @purpose Discovers Codex and Claude Code conversations from their on-disk transcripts.
+// @role    Behind wb_scan_sessions; also feeds agents.rs.
+// @deps    serde_json, ~/.codex and ~/.claude/projects file layouts
+// @gotcha  Reads heads only; formats are the agents' private files and may change.
+//          docs/modules/core/README.md
 //! Discovers Codex and Claude Code conversations on disk.
 //!
 //! Codex:  ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl, first line is `session_meta`

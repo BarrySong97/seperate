@@ -1,3 +1,9 @@
+// @purpose Worktree dialogs: remove from Seperate, delete from disk (git worktree remove / prune), new-worktree sheet.
+// @role    Called from Menus and Store.promptNewWorktree; runs git work through Store / Core.
+// @deps    AppKit (NSAlert, NSPanel), Store, Core (worktreeStatus, listBranches).
+// @gotcha  Deleting refuses uncommitted work unless explicitly forced; hide keeps files and git records.
+//          See docs/modules/ui/README.md
+
 import AppKit
 
 /// Confirmations for removing a worktree (from Seperate only, or from disk) and the "new worktree" sheet.

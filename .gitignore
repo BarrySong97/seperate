@@ -10,3 +10,4 @@ xcuserdata/
 .run.log
 core/target/
 .secrets
+.claude/settings.local.json
