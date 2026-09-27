@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* Seperate's "Bone" palette, shared with the app (Sources/Workbench/UI/Theme.swift). */
+@theme {
+  --color-ground: #1e1f1a;
+  --color-sunk: #141510;
+  --color-well: #1b1c18;
+  --color-surface: #22231e;
+  --color-pane: #272822;
+  --color-panel: #2b2c26;
+  --color-line: #34352f;
+  --color-line-soft: #2e2f29;
+  --color-line-strong: #42433c;
+  --color-sel: #3d3e36;
+  --color-ink: #f2f0e6;
+  --color-text: #e8e8e2;
+  --color-body: #b9bab1;
+  --color-muted: #9c9d95;
+  --color-faint: #6d6e67;
+  --color-bone: #d6d3c3;
+  --color-cta: #e8e6da;
+  --color-claude: #e8916c;
+  --color-codex: #7b8fe3;
+  --color-shell: #78c6de;
+  --color-wait: #e6b450;
+  --color-run: #9ccf6c;
+
+  --font-sans: var(--font-plex-sans), "PingFang SC", "Noto Sans SC", -apple-system, sans-serif;
+  --font-serif: var(--font-fraunces), var(--font-noto-serif-sc), "Noto Serif SC", "Songti SC", Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-bone);
+  outline-offset: 2px;
+}
