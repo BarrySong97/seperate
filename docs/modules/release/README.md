@@ -22,7 +22,7 @@
 CI(`.github/`):
 - `workflows/ci.yml` — push main / PR / 手动:`deps` → `scripts/build-core.sh && swift test` → `scripts/package-dmg.sh` → 上传 DMG artifact(保留 14 天)。
 - `workflows/release.yml` — push tag `v*.*.*`:版本 → 导入证书(可选)→ `build-app.sh release` → 公证 app(可选)→ `PACKAGE_ONLY=1 package-dmg.sh` → 公证 DMG(可选)→ 建 draft release → 签 zip 写 appcast 并上传 → 发布为 latest。
-- `actions/deps/action.yml` — 复合 action:按 `setup-ghostty.sh` 内容哈希缓存 GhosttyKit,未命中才跑该脚本;`rust-cache` 缓存 `core`。
+- `actions/deps/action.yml` — 复合 action:按 `setup-ghostty.sh` 去掉注释和空行后的哈希缓存 GhosttyKit(只改注释不会让缓存失效),未命中才跑该脚本;`rust-cache` 缓存 `core`。
 
 `Package.swift` targets:
 - `GhosttyKit`、`WorkbenchCore` — binaryTarget,指向 `Vendor/*.xcframework`(由上面两个 setup/build 脚本生成)。
@@ -64,7 +64,7 @@ Sources/ ──build-app.sh (swift build + 组装 + codesign)──▶ build/Sep
 - **更新检查频率**:`SUScheduledCheckInterval` 设为一年,实际只在启动时和「检查更新…」时检查(见 `build-app.sh` 注释)。`README.md` 里「每天检查一次」的描述与当前代码不一致。
 - **appcast 只有一个 item**(本次版本),下载 URL 固定为 `releases/download/v<ver>/<zip名>`;tag 名和 zip 名要对得上。
 - **`release-local.sh` 必须与 `release.yml` 保持同步**;它会临时改钥匙串搜索列表,退出时恢复。
-- `setup-ghostty.sh` 只支持 Apple Silicon;Ghostty commit 与 Zig 版本成对固定(Ghostty v1.3.x 的 Zig 0.15 链接不了 macOS 26 SDK);它会 unset 代理变量。改动此脚本会让 CI 的 GhosttyKit 缓存失效并重编。
+- `setup-ghostty.sh` 只支持 Apple Silicon;Ghostty commit 与 Zig 版本成对固定(Ghostty v1.3.x 的 Zig 0.15 链接不了 macOS 26 SDK);它会 unset 代理变量。改动此脚本的代码(非注释行)会让 CI 的 GhosttyKit 缓存失效并重编(约 8 分钟)。
 - Codex 图标取自本机 `/Applications/ChatGPT.app`,不入库;CI 上没有则跳过。
 - DMG 图标坐标 `(300, 190)` 同时出现在 `dmg-settings.py` 和 `make-installer-assets.swift`,改一处要改另一处。
 - 发布、签名、公证类脚本只在用户明确要求时运行。

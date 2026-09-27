@@ -3,6 +3,12 @@ description: Restores or builds GhosttyKit (libghostty) and caches the Rust core
 runs:
   using: composite
   steps:
+    # Key on the script's code only (comments and blank lines stripped), so editing a comment
+    # doesn't throw away the cache and rebuild Ghostty from source (~8 min).
+    - name: GhosttyKit cache key
+      id: ghostty-key
+      shell: bash
+      run: echo "hash=$(grep -vE '^[[:space:]]*(#|$)' scripts/setup-ghostty.sh | shasum -a 256 | cut -c1-16)" >> "$GITHUB_OUTPUT"
     - name: Cache GhosttyKit
       id: ghostty
       uses: actions/cache@v4
@@ -10,7 +16,7 @@ runs:
         path: |
           Vendor/GhosttyKit.xcframework
           Vendor/ghostty-resources
-        key: ghostty-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/setup-ghostty.sh') }}
+        key: ghostty-${{ runner.os }}-${{ runner.arch }}-${{ steps.ghostty-key.outputs.hash }}
     - name: Build GhosttyKit
       if: steps.ghostty.outputs.cache-hit != 'true'
       shell: bash
