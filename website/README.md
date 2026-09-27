@@ -23,7 +23,7 @@ In the Vercel project settings:
 | Framework Preset | Other (vercel.json sets `framework: null`) |
 | Build / Install / Output | leave empty: vercel.json decides (`pnpm build`, `pnpm install --frozen-lockfile`, `out`) |
 | Node.js | 20 or newer |
-| Domain | `sperate.4real.ltd` (must match `site.url` in `src/lib/site.ts`) |
+| Domain | `seperate.vercel.app` (must match `site.url` in `src/lib/site.ts`; change both together) |
 
 No environment variables are needed to build: R2 credentials are only for `pnpm upload` on your machine.
 

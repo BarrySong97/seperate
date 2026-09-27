@@ -3,7 +3,7 @@ export const repo = "https://github.com/BarrySong97/seperate";
 export const site = {
   name: "Seperate",
   // Production origin: canonical links, sitemap, robots and Open Graph URLs are built from it.
-  url: "https://sperate.4real.ltd",
+  url: "https://seperate.vercel.app",
   title: "Seperate — 所有 agent，一个窗口",
   keywords: ["Seperate", "Claude Code", "Codex", "coding agent", "AI 编程", "终端", "worktree", "macOS", "Ghostty", "多 agent"],
   description: "在一个窗口里并排运行 Claude Code、Codex 和终端，按项目和 worktree 管理，agent 需要你时提醒你。",
