@@ -1,4 +1,4 @@
-// @purpose One libghostty surface (pty + GPU renderer) hosted in an NSView, with keyboard/IME/mouse.
+// @purpose One libghostty surface (pty + GPU renderer) hosted in an NSView, with keyboard/IME/mouse/file drops.
 // @role    Created and destroyed by Store per running session; reports title/pwd/bell/exit via callbacks.
 // @deps    GhosttyKit, AppKit, Carbon.HIToolbox (key codes), GhosttyRuntime
 // @gotcha  Surface starts only once on screen at real size; call destroy() before release.
@@ -41,6 +41,8 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
         self.sessionID = sessionID
         pending = (cwd, initialInput, extra.isEmpty ? ["WORKBENCH_SESSION": sessionID] : extra)
         super.init(frame: .zero)
+        // Only files/images: tab and pane drags carry plain strings and must reach the PaneView behind.
+        registerForDraggedTypes([.fileURL, .png, .tiff])
     }
 
     /// The shell starts only once the view is on screen at its real size: a terminal started
@@ -530,6 +532,20 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
     private func binding(_ action: String) {
         guard let surface else { return }
         _ = action.withCString { ghostty_surface_binding_action(surface, $0, UInt(action.utf8.count)) }
+    }
+
+    // MARK: Dropping files
+
+    /// Files (or an image) dragged in from outside are pasted as escaped paths, the same as ⌘V.
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { surface == nil ? [] : .copy }
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { surface == nil ? [] : .copy }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let surface, let text = GhosttyRuntime.pasteText(sender.draggingPasteboard) else { return false }
+        let s = text + " "
+        s.withCString { ghostty_surface_text(surface, $0, UInt(s.utf8.count)) }
+        window?.makeFirstResponder(self)
+        return true
     }
 
     // MARK: Website screenshots (ShotRenderer)

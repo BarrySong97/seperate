@@ -16,6 +16,7 @@
 - 输出事件:Ghostty action(标题、pwd、响铃、OSC 9/777 桌面通知、命令结束、鼠标形状、打开 URL)→ `TerminalView` 的 `onTitle/onPwd/onAttention/onNotify/onCommandFinished` 回调 → `Store`。
 - 关闭:Ghostty `close_surface_cb` → `surfaceRequestedClose` 异步 → `onClose(processAlive)` → `Store` 决定后调用 `destroy()`。
 - 粘贴:`pasteText` 把 Finder 文件变成转义路径、无文本的图片存为 PNG(`~/Library/Caches/Seperate/pastes/`)再粘贴路径,供 Claude Code / Codex 当附件。
+- 拖放:`TerminalView` 只注册 `.fileURL/.png/.tiff`,从外部拖进来的文件 / 图片走同一个 `pasteText` 变成转义路径(末尾补空格),经 `ghostty_surface_text` 以粘贴方式送入;Tab / 分栏拖拽是纯字符串,不被终端截获,仍由后面的 `PaneView` 处理。
 
 ## 对外接口
 - `GhosttyRuntime.shared`:`start()`、`app`、`onSurfaceAction`、`tick()`;静态 `pasteText(_:)`、`shellEscape(_:)`
