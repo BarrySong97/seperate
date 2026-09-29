@@ -14,7 +14,7 @@
 
 ## 对外接口
 - 查询:`panes`(按树的叶子顺序)、`focusedPane`、`pane(containing:)`、`paneNumber`(⌘数字 用)、`openSessionIDs`。
-- tab 操作:`open`、`addTab`、`detach`、`activate`、`move(_:to:edge:)`(edge 为 nil 表示并入为 tab)。
+- tab 操作:`open`、`addTab`、`detach`、`activate`、`move(_:to:edge:)`(edge 为 nil 表示并入为 tab);`Pane.tabs(_:of:)` 给 Tab 右键菜单算「其他 / 左侧 / 右侧 / 所有」要关的 tab(按 Tab 条顺序)。
 - 分割操作:`split`、`movePane`(edge 为 nil 表示互换)、`closePane`、`setSizes`、`apply(preset)`、`prune(keeping:)`。
 - 静态树工具:`leaves`、`map`、`insert`、`remove`、`normalize`、`newID`。
 

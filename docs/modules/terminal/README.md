@@ -20,7 +20,7 @@
 
 ## 对外接口
 - `GhosttyRuntime.shared`:`start()`、`app`、`onSurfaceAction`、`tick()`;静态 `pasteText(_:)`、`shellEscape(_:)`
-- `TerminalView(sessionID:cwd:initialInput:env:)`、`destroy()`、`requestClose()`、`hasSelection`、`copy/paste/selectAll`,以及上面列出的各 `on*` 回调和 `contextMenu`
+- `TerminalView(sessionID:cwd:initialInput:env:)`、`destroy()`、`requestClose()`、`hasSelection`、`needsConfirmClose`(Ghostty 判断关掉会不会杀掉在跑的进程,批量关 Tab 用)、`copy/paste/selectAll`,以及上面列出的各 `on*` 回调和 `contextMenu`
 - `GhosttyRuntime.extraConfig`:最后叠加的额外配置行(仅截图模式用来放大字号),非空时写到 `workbench-ghostty-shots.conf`,不覆盖正常运行时的配置文件
 - 截图用(`ShotRenderer`):`visibleText()`(读屏幕文字,不产生选区)、`pressKey(_:text:)`(直接发给 Ghostty 的按键)、`renderedImage()`(Ghostty 最后一帧的 IOSurface)
 - 环境变量:默认给 shell 注入 `WORKBENCH_SESSION=<sessionID>`(传入自定义 env 时以传入为准)

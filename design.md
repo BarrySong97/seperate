@@ -66,6 +66,8 @@ Workspace 可选 tint（`Workspace.tints`，`Sources/Workbench/Model/Models.swif
 - **快捷键**（菜单栏定义在 `Sources/Workbench/App/AppDelegate.swift`）：⌘K / ⌘P 命令面板、⌘T 新建终端 Tab、⌘N 新建项目、⌘O 添加项目、⌥⌘O 用默认编辑器打开 Worktree、⌘I 收件箱、⇧⌘R 重新扫描会话、⌘W 关闭 Tab、⌘B 切换侧栏、⌘D 向右分屏、⇧⌘D 向下分屏、⌃⌘1–4 布局预设、⌘1–9 聚焦第 N 栏、⇧⌘N 新建 Workspace、⌃] / ⌃[ 下一个 / 上一个 Workspace、⌃1–9 切到第 N 个 Workspace。
 - **命令面板**：窗口内浮层 + 暗化背景（不是独立窗口）。↑↓ 选择、⏎ 打开、⌘⏎ 在新栏打开、⌘1–9 直接选第 N 行、esc 关闭。分组：会话 / Workspace / 新建 / 命令；空查询不显示「新建」组。支持拼音首字母和全拼（「dmtb」→ 代码同步）。关闭后焦点还给原来的终端。
 - **菜单**：右键和「+」菜单打开时才构建；危险项（「从磁盘删除…」）用红字；需要进一步输入的项以「…」结尾；当前默认项标「（默认）」或打勾。
+- **新建会话**：凡是列出「Codex / Claude Code / 终端」的地方（「+」菜单、项目 / Worktree / 终端右键、命令面板），Claude Code 下面都有一项「Claude Code（跳过权限）」，以 `--dangerously-skip-permissions` 启动。
+- **Tab**：右键 Tab 可「关闭 Tab / 关闭其他 Tab / 关闭左侧 Tab / 关闭右侧 Tab / 关闭所有 Tab」，没有可关的项置灰；批量关闭时有进程在跑只确认一次。
 - **侧栏**：单击会话打开，⌘/⇧+单击在新栏打开；拖会话到栏的边缘分屏、到中间或 Tab 条加为 Tab；拖项目 / Worktree 行重排；双指横扫切 Workspace；隐藏时鼠标贴左边缘浮出 peek。
 - **栏**：拖分隔条调整比例，双击分隔条均分；拖整栏可交换位置；点击栏即聚焦。
 - **Tooltip 带快捷键**：如「切换侧栏 ⌘B」「向右分屏 ⌘D」「收件箱 ⌘I」，改快捷键时一并改。

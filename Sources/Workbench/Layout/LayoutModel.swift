@@ -11,6 +11,19 @@ struct Pane: Codable, Equatable, Identifiable {
     var id: String
     var tabs: [String] = []      // AgentSession ids
     var active: String?
+
+    enum TabGroup { case others, left, right, all }
+
+    /// The tabs a "close others / left / right / all" action on tab `id` would close, in strip order.
+    func tabs(_ group: TabGroup, of id: String) -> [String] {
+        guard let i = tabs.firstIndex(of: id) else { return [] }
+        switch group {
+        case .others: return tabs.filter { $0 != id }
+        case .left: return Array(tabs[..<i])
+        case .right: return Array(tabs[(i + 1)...])
+        case .all: return tabs
+        }
+    }
 }
 
 indirect enum LayoutNode: Codable, Equatable {

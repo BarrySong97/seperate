@@ -478,6 +478,8 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
         if event.modifierFlags.contains(.shift) || contextMenu == nil { mouseButton(event, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_RIGHT) }
     }
 
+    /// Something is still running that closing would kill (Ghostty's own close-confirmation rule).
+    var needsConfirmClose: Bool { surface.map(ghostty_surface_needs_confirm_quit) ?? false }
     var hasSelection: Bool { surface.map(ghostty_surface_has_selection) ?? false }
     override func otherMouseDown(with event: NSEvent) { mouseButton(event, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_MIDDLE) }
     override func otherMouseUp(with event: NSEvent) { mouseButton(event, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_MIDDLE) }

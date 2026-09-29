@@ -66,6 +66,15 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertNil(AgentHooks.terminalCommand(for: shell))
     }
 
+    func testClaudeSkipPermissionsFlag() {
+        var claude = AgentSession(id: "c", kind: .claude, agentSessionID: nil, cwd: "/", title: "", lastActivity: Date())
+        XCTAssertEqual(claude.launchCommand, "claude")
+        claude.skipPermissions = true
+        XCTAssertEqual(claude.launchCommand, "claude --dangerously-skip-permissions")
+        claude.agentSessionID = "abc"
+        XCTAssertEqual(claude.launchCommand, "claude --resume abc --dangerously-skip-permissions", "resuming keeps the flag")
+    }
+
     func testUserCodexNotifyIsReadFromTopLevelOnly() throws {
         let f = dir.appendingPathComponent("config.toml").path
         try """

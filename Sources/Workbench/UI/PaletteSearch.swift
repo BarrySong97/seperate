@@ -15,7 +15,7 @@ enum PaletteScope: Equatable {
 struct PaletteEntry {
     enum Kind {
         case session(String)                    // session id
-        case create(AgentKind, Worktree)        // start Codex / Claude / a shell in a worktree
+        case create(AgentKind, Worktree, skipPermissions: Bool = false)   // start Codex / Claude / a shell in a worktree
         case workspace(String)                  // switch to workspace id
         case command(String, () -> Void)        // label id, action
     }

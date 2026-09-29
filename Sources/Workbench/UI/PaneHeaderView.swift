@@ -1,6 +1,6 @@
 // @purpose Per-pane header: tab strip plus origin line (project / worktree, status, session id, worktree actions).
 // @role    Owned by PaneView (WorkspaceView.swift); TabView drags session ids / panes; actions call Store
-//          (activate, closeTab, splitFocused, closePane) and Menus.
+//          (activate, closeTab, closeTabs, splitFocused, closePane) and Menus (tab right-click menu).
 // @deps    AppKit (NSDraggingSource), Store, Widgets (IconButton, ChipView, DotView), Menus, ExternalApp.
 // @gotcha  Updated in place; tab views are reused by session id. Height is fixed (34 + 26). See docs/modules/ui/README.md
 
@@ -83,6 +83,7 @@ final class PaneHeaderView: NSView, NSDraggingSource {
             let t = TabView(sessionID: id)
             t.onSelect = { [weak self] in self.map { $0.store.activate(id, in: $0.paneID) } }
             t.onClose = { [weak self] in self?.store.closeTab(id) }
+            t.menuProvider = { [weak self] in self.map { Menus.tab($0.store, sessionID: id, paneID: $0.paneID) } }
             strip.addSubview(t)
             tabs[id] = t
         }
@@ -220,12 +221,13 @@ final class PaneHeaderView: NSView, NSDraggingSource {
     }
 }
 
-/// One tab: icon, title, status dot, close. Drag it to another pane or its edge.
+/// One tab: icon, title, status dot, close. Drag it to another pane or its edge; right-click for close actions.
 @MainActor
 final class TabView: NSView, NSDraggingSource {
     let sessionID: String
     var onSelect: (() -> Void)?
     var onClose: (() -> Void)?
+    var menuProvider: (() -> NSMenu?)?     // right-click: close this / others / left / right / all
     private let icon = NSImageView()
     private let title = NSTextField.label(font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
     private let dot = DotView(frame: .zero)
@@ -285,6 +287,7 @@ final class TabView: NSView, NSDraggingSource {
         beginDraggingSession(with: [item], event: event, source: self)
     }
     override func mouseUp(with event: NSEvent) { downAt = nil }
+    override func menu(for event: NSEvent) -> NSMenu? { menuProvider?() }
 
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .move }
 

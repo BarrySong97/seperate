@@ -294,15 +294,17 @@ final class Store {
         clearAttention(sessionID)
     }
 
-    func newSession(_ kind: AgentKind, in wt: Worktree, newPane: Bool = false) {
-        let s = makeSession(kind, in: wt)
+    /// `skipPermissions` starts Claude with --dangerously-skip-permissions (ignored for other kinds).
+    func newSession(_ kind: AgentKind, in wt: Worktree, newPane: Bool = false, skipPermissions: Bool = false) {
+        let s = makeSession(kind, in: wt, skipPermissions: skipPermissions)
         open(s.id, newPane: newPane)
     }
 
-    private func makeSession(_ kind: AgentKind, in wt: Worktree) -> AgentSession {
+    private func makeSession(_ kind: AgentKind, in wt: Worktree, skipPermissions: Bool = false) -> AgentSession {
         let n = created.filter { $0.kind == kind && worktreeOfSession[$0.id] == wt.path }.count + 1
-        let s = AgentSession(id: "new:" + UUID().uuidString, kind: kind, agentSessionID: nil, cwd: wt.path,
+        var s = AgentSession(id: "new:" + UUID().uuidString, kind: kind, agentSessionID: nil, cwd: wt.path,
                              title: kind == .shell ? "zsh \(n)" : "\(kind.displayName) \(n)", lastActivity: Date(), status: .running)
+        if kind == .claude && skipPermissions { s.skipPermissions = true }
         created.append(s)
         rebuildIndex()
         notify(.projects)
@@ -349,6 +351,23 @@ final class Store {
     /// agents stay listed in the sidebar and can be resumed.
     func closeTab(_ id: String) {
         if let t = terminals[id] { t.requestClose() } else { detachEverywhere(id) }
+    }
+
+    /// Closes several tabs at once (tab menu: others / left / right / all), asking once if any of
+    /// them still has something running rather than once per tab.
+    func closeTabs(_ ids: [String]) {
+        let busy = ids.filter { terminals[$0]?.needsConfirmClose == true }
+        if !busy.isEmpty {
+            let a = NSAlert()
+            a.messageText = "关闭 \(ids.count) 个 Tab？"
+            a.informativeText = "其中 \(busy.count) 个还有进程在运行，会一起结束。Codex / Claude 会话之后可以从侧栏恢复。"
+            a.addButton(withTitle: "关闭")
+            a.addButton(withTitle: "取消")
+            guard a.runModal() == .alertFirstButtonReturn else { return }
+        }
+        for id in ids {
+            if terminals[id] != nil { endSession(id) } else { detachEverywhere(id) }
+        }
     }
 
     private func confirmEnd(_ id: String, processAlive: Bool) {

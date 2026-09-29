@@ -16,13 +16,14 @@
 - **启动**:`Store.init` → `AgentHooks.install()` → `load()`(SQLite,失败回退 `state.json`)→ `resolveProjects`(同步读 git)→ `rebuildIndex()` → 注册分布式通知(Agent 事件)与 `didBecomeActive`(markSeen)。
 - **刷新**:`refresh()` 由 AppDelegate 启动时、每 60 秒定时器、菜单手动触发;在后台 Task 里 `Core.scanSessions()` + `resolveProjects`,回主线程比对,有变化才 `rebuildIndex()` + `notify(.projects)`。
 - **新会话 id 认领**:App 内新建的 Agent 起初没有会话 id,`adoptAgentIDs()` 按 kind + cwd + 时间(创建前 5 秒内起)从扫描结果里认领,之后才能 resume。
+- **跳过权限**:`AgentSession.skipPermissions`(只对 Claude)让 `launchCommand` 追加 `--dangerously-skip-permissions`(新开和 resume 都带)。只存在内存里,不进数据库:重启 App 后恢复的会话会重新询问权限。
 - **Agent 状态**:hook 事件 / 终端 OSC 通知 / 用户按键 / 命令退出 → `setPhase` → 更新 `phase`、角标、系统通知 → `resort` → `notify`。详见 [agent-hooks 专题](../../topics/agent-hooks.md)。
 - **保存**:任何 `notify()` 都会 `scheduleSave()`(0.5 秒防抖)→ `saveNow()` 写 SQLite;退出时 `shutdown()` 立即保存并销毁终端。
 
 ## 对外接口
 - 观察:`observe(_:) -> UUID` / `unobserve`,回调收到 `Store.Change`:`.projects`、`.session(id)`、`.layout(structure:)`、`.workspace`、`.reveal(id)`、`.sidebar`。
 - 查询:`session(_:)`、`status(of:)`、`phaseMessage(of:)`、`sessions(in:)`、`inboxItems()`、`waitingIDs`、`layout`、`visibleProjects` 等。
-- 操作:打开/新建/结束会话、`mutateLayout`、工作区增删改、项目与 worktree 管理、`markInboxRead`、`openFromInbox`。
+- 操作:打开/新建/结束会话(`closeTab` 单个,经 Ghostty 确认;`closeTabs` 批量,有进程在跑只弹一次确认)、`mutateLayout`、工作区增删改、项目与 worktree 管理、`markInboxRead`、`openFromInbox`。
 - 由 UI 安装的回调:`inboxHandler`、`paletteHandler`、`importHandler`。
 - 静态:`Store.dataDir`、`dbURL`、`legacyURL`(测试用)。
 - 仅截图模式:`shotsSetPhase(_:_:need:)` 直接摆出收件箱状态(平时由 agent hook 驱动)。

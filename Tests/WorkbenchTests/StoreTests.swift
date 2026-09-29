@@ -73,6 +73,18 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(s.project(Core.repoInfo(dir.appendingPathComponent("repo").path)?.root ?? "")?.isGit, true)
     }
 
+    @MainActor func testClosingTabsToTheRightKeepsTheClickedOneActive() {
+        let s = Store()
+        s.mutateLayout { l in ["a", "b", "c", "d"].forEach { l.open($0) } }
+        let pane = s.layout.panes[0]
+        XCTAssertEqual(pane.active, "d")
+        s.closeTabs(pane.tabs(.right, of: "b"))
+        XCTAssertEqual(s.layout.panes[0].tabs, ["a", "b"])
+        XCTAssertEqual(s.layout.panes[0].active, "b", "the active tab was closed; the clicked one takes over")
+        s.closeTabs(s.layout.panes[0].tabs(.all, of: "b"))
+        XCTAssertEqual(s.layout.panes[0].tabs, [])
+    }
+
     @MainActor func testOrderColorAndPinsPersist() {
         let s = Store()
         let f = folders(3)

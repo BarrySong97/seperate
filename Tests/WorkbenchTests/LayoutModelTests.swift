@@ -30,6 +30,17 @@ final class LayoutModelTests: XCTestCase {
         XCTAssertEqual(m.panes.map(\.tabs), [["a"], ["b"], ["c"]])
     }
 
+    func testTabGroupsForTheTabMenu() {
+        let p = Pane(id: "p", tabs: ["a", "b", "c", "d"], active: "b")
+        XCTAssertEqual(p.tabs(.left, of: "c"), ["a", "b"])
+        XCTAssertEqual(p.tabs(.right, of: "c"), ["d"])
+        XCTAssertEqual(p.tabs(.others, of: "c"), ["a", "b", "d"])
+        XCTAssertEqual(p.tabs(.all, of: "c"), ["a", "b", "c", "d"])
+        XCTAssertEqual(p.tabs(.left, of: "a"), [], "nothing left of the first tab")
+        XCTAssertEqual(p.tabs(.right, of: "d"), [], "nothing right of the last tab")
+        XCTAssertEqual(p.tabs(.all, of: "x"), [], "a tab that is not in the pane")
+    }
+
     func testMovingLastTabOutClosesSourcePane() {
         var m = LayoutModel()
         m.open("a")

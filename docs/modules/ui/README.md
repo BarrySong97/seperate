@@ -11,13 +11,13 @@
 - `Sources/Workbench/UI/SidebarView.swift` — 项目 → Worktree → 会话的 NSOutlineView、底部「添加项目」+ 收件箱铃铛、Arc 式 Workspace 切换条（详见 [sidebar.md](./sidebar.md)）
 - `Sources/Workbench/UI/TopBarView.swift` — 顶栏：侧栏开关、Workspace 名、「N 栏 · N 个 Tab …」摘要、布局预设按钮、新版本提示
 - `Sources/Workbench/UI/WorkspaceView.swift` — 把 `store.layout` 渲染成嵌套 `SplitContainerView` / `PaneView`；分隔条拖动、拖放落点（边缘分屏 / 中间加 Tab）、空栏选择器
-- `Sources/Workbench/UI/PaneHeaderView.swift` — 每栏顶部：Tab 条（`TabView`，可拖）+ 来源行（项目/Worktree、状态、会话 id、Finder / 编辑器 / 复制路径 / ··· 操作）
+- `Sources/Workbench/UI/PaneHeaderView.swift` — 每栏顶部：Tab 条（`TabView`，可拖，右键出关闭菜单）+ 来源行（项目/Worktree、状态、会话 id、Finder / 编辑器 / 复制路径 / ··· 操作）
 - `Sources/Workbench/UI/CommandPalette.swift` — ⌘K / ⌘P 窗口内浮层面板（NSTableView）
 - `Sources/Workbench/UI/PaletteSearch.swift` — 面板的数据模型：scope、entry、分组与排序（无 UI）
 - `Sources/Workbench/UI/Fuzzy.swift` — 子序列模糊匹配 + 拼音（首字母 / 全拼）匹配（无 UI，有单测 `Tests/WorkbenchTests/FuzzyTests.swift`）
 - `Sources/Workbench/UI/ImportPanel.swift` — 「从 Agent 使用过的项目导入」浮层，多选后加入指定 Workspace
 - `Sources/Workbench/UI/InboxPopover.swift` — 铃铛弹出的收件箱：需要你 / 待查看 / 运行中
-- `Sources/Workbench/UI/Menus.swift` — 所有右键菜单与「+」菜单（项目、Worktree、会话、Workspace、终端、用其他应用打开），外加 `WorkspaceColorPicker`
+- `Sources/Workbench/UI/Menus.swift` — 所有右键菜单与「+」菜单（项目、Worktree、会话、Tab、Workspace、终端、用其他应用打开），外加 `WorkspaceColorPicker`
 - `Sources/Workbench/UI/NewProjectSheet.swift` — 「新建项目」sheet（名称、父目录、是否 git init）
 - `Sources/Workbench/UI/WorktreeDialogs.swift` — 移除 / 从磁盘删除 Worktree 的确认框、已隐藏 Worktree 菜单、`NewWorktreeSheet`
 - `Sources/Workbench/UI/Widgets.swift` — 共享小组件：`Icons`、`IconButton`、`DotView`、`ChipView`、`ActionItem`、`ThinScroller`/`HoverScrollView`、`RelativeTime`、`NSTextField.label`、`layoutRow`
@@ -65,6 +65,7 @@
 - **中文 UI**：所有用户可见文案（菜单、tooltip、对话框、相对时间）是简体中文；「Session / Tab / Worktree / Workspace」等术语保留英文。代码注释是英文。
 - **侧栏展开状态交给 AppKit autosave**（每个 Workspace 一个 `autosaveName`），app 不自己持久化；细节见 [sidebar.md](./sidebar.md)。
 - **Sheet 生命周期**：`NewProjectSheet` / `NewWorktreeSheet` 用静态 `current` 引用保活，sheet 结束时清空。
+- **批量关 Tab**：Tab 右键「关闭其他 / 左侧 / 右侧 / 所有 Tab」走 `Store.closeTabs`，只要其中有终端还在跑进程（Ghostty 的 `needs_confirm_quit`）就只弹一次确认，不逐个弹；单个「关闭 Tab」仍走 `closeTab`。
 - **危险操作**：「从磁盘删除 Worktree」执行 `git worktree remove`，有未提交改动时默认拒绝，只能显式强制；「从 Seperate 移除」只隐藏，不动文件和 git 登记。
 - 侧栏宽度存 `UserDefaults["sidebarWidth"]`，范围 180–480，且保证工作区至少留 360pt。
 

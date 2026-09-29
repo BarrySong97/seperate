@@ -141,6 +141,13 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
                 out.append(PaletteEntry(kind: .create(k, wt), section: .create, title: title,
                                         context: multi ? "\(project) / \(wt.alias)" : project,
                                         keys: [project, wt.alias, k.rawValue], agent: k, pinyin: Core.pinyinKeys(title)))
+                if k == .claude {
+                    let title = "新建 \(AgentKind.skipPermissionsName)"
+                    out.append(PaletteEntry(kind: .create(.claude, wt, skipPermissions: true), section: .create, title: title,
+                                            context: multi ? "\(project) / \(wt.alias)" : project,
+                                            keys: [project, wt.alias, "claude", "dangerously skip permissions yolo"],
+                                            agent: .claude, pinyin: Core.pinyinKeys(title)))
+                }
             }
         }
         func command(_ title: String, _ symbol: String, _ keys: [String] = [], _ action: @escaping () -> Void) {
@@ -226,7 +233,7 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
             }
             if split { store.open(sid, newPane: true) }
             else { store.addTab(sid, to: store.layout.focusedPaneID); store.clearAttention(sid) }
-        case .create(let k, let wt): store.newSession(k, in: wt, newPane: split)
+        case .create(let k, let wt, let skip): store.newSession(k, in: wt, newPane: split, skipPermissions: skip)
         case .workspace(let id): store.switchWorkspace(to: id)
         case .command(_, let action): action()
         }

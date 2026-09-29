@@ -14,6 +14,12 @@ enum Menus {
             let item = ActionItem(k.displayName) { before?(); store.newSession(k, in: wt) }
             item.image = Icons.agent(k, size: 12)
             menu.addItem(item)
+            if k == .claude {
+                let skip = ActionItem(AgentKind.skipPermissionsName) { before?(); store.newSession(.claude, in: wt, skipPermissions: true) }
+                skip.image = Icons.agent(.claude, size: 12)
+                skip.toolTip = "以 --dangerously-skip-permissions 启动：不再询问权限，直接执行命令和改文件"
+                menu.addItem(skip)
+            }
         }
     }
 
@@ -185,6 +191,25 @@ enum Menus {
             m.addItem(ActionItem("向右分屏") { store.focusSession(id); store.splitFocused(pane.id, edge: .right) })
             m.addItem(ActionItem("向下分屏") { store.focusSession(id); store.splitFocused(pane.id, edge: .bottom) })
         }
+        return m
+    }
+
+    /// Right-click on a tab: close it, or the others / the ones to its left or right / all of this pane's tabs.
+    static func tab(_ store: Store, sessionID id: String, paneID: String) -> NSMenu {
+        let m = NSMenu()
+        m.autoenablesItems = false
+        m.addItem(ActionItem("关闭 Tab") { store.closeTab(id) })
+        guard let pane = store.layout.panes.first(where: { $0.id == paneID }) else { return m }
+        let groups: [(String, Pane.TabGroup)] = [("关闭其他 Tab", .others), ("关闭左侧 Tab", .left), ("关闭右侧 Tab", .right)]
+        for (title, g) in groups {
+            let ids = pane.tabs(g, of: id)
+            let item = ActionItem(title) { store.closeTabs(ids) }
+            item.isEnabled = !ids.isEmpty
+            m.addItem(item)
+        }
+        m.addItem(.separator())
+        let all = pane.tabs(.all, of: id)
+        m.addItem(ActionItem("关闭所有 Tab") { store.closeTabs(all) })
         return m
     }
 

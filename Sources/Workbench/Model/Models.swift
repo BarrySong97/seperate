@@ -34,6 +34,9 @@ enum AgentKind: String, Codable, CaseIterable {
         case .shell: "终端"
         }
     }
+
+    /// Menu / palette label for Claude started with --dangerously-skip-permissions.
+    static let skipPermissionsName = "Claude Code（跳过权限）"
 }
 
 enum SessionStatus: String, Codable {
@@ -83,6 +86,9 @@ struct AgentSession: Codable, Identifiable, Hashable {
     var title: String
     var lastActivity: Date
     var status: SessionStatus = .history
+    /// Claude started with --dangerously-skip-permissions. Kept in memory only (not in the database),
+    /// so a session resumed after a restart asks for permissions again.
+    var skipPermissions: Bool?
 
     /// Command the terminal runs for this tab.
     var launchCommand: String? {
@@ -93,8 +99,9 @@ struct AgentSession: Codable, Identifiable, Hashable {
             if let sid = agentSessionID { return "codex resume \(sid)" }
             return "codex"
         case .claude:
-            if let sid = agentSessionID { return "claude --resume \(sid)" }
-            return "claude"
+            let skip = skipPermissions == true ? " --dangerously-skip-permissions" : ""
+            if let sid = agentSessionID { return "claude --resume \(sid)" + skip }
+            return "claude" + skip
         }
     }
 }
