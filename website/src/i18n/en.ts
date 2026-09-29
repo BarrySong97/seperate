@@ -1,0 +1,148 @@
+/**
+ * English copy for the whole site. `Dict` is this object's type: zh.ts must have exactly the same keys,
+ * so a string missing in either language is a type error. Mock UI strings follow the app's English UI.
+ */
+export const en = {
+  site: {
+    title: "Seperate — Every agent, one window",
+    description:
+      "Run Claude Code, Codex and terminals side by side in one window, organized by project and worktree, with a nudge when an agent needs you.",
+    keywords: ["Seperate", "Claude Code", "Codex", "coding agent", "AI coding", "terminal", "worktree", "macOS", "Ghostty", "multi-agent"],
+    requirements: "macOS 14+ · Apple Silicon · Free",
+    ogAlt: "Seperate's window: sessions grouped by project and worktree on the left, Claude Code and Codex running side by side on the right.",
+  },
+  nav: {
+    aria: "Main navigation",
+    features: "Features",
+    changelog: "Changelog",
+    download: "Download for macOS",
+    language: "Language",
+  },
+  notFound: { title: "Page not found", body: "This page doesn't exist, or it moved.", home: "Back to the homepage" },
+  footer: { poweredBy: "Powered by Ghostty's terminal engine" },
+  langHint: { text: "切换到中文", dismiss: "关闭" },
+  home: {
+    tag: "The agent workbench for macOS",
+    titleA: "Every agent,",
+    titleB: "one window, side by side.",
+    downloadVersion: (v: string) => `Download Seperate ${v}`,
+    pitch:
+      "Seperate puts Claude Code, Codex and your terminals in one window, organized by project and worktree. See at a glance which agent is waiting for you.",
+    demoLabel: "Seperate product demo",
+    featuresChip: "Features",
+    featuresTitle: "Run several agents at once, without the mess.",
+    ctaTitle: "Download, double-click, go.",
+    ctaDownload: "Download for macOS",
+    ctaGitHub: "View on GitHub",
+    version: "Version",
+    specs: [
+      ["System", "macOS 14 or later"],
+      ["Chip", "Apple Silicon"],
+      ["Requires", "Claude Code or Codex CLI"],
+    ] as [string, string][],
+  },
+  features: {
+    worktrees: {
+      title: "One agent, one worktree",
+      body: "The sidebar groups everything by project, worktree and session. Pick a base branch to start a new worktree; the status next to each session tells you whether it's running, waiting or done.",
+    },
+    panes: {
+      title: "Agents from different projects, side by side",
+      body: "Two, three or four panes, or a 2×2 grid, one click away. Drag tabs between panes; terminals render with Ghostty's engine, so tens of thousands of lines still scroll smoothly.",
+    },
+    inbox: {
+      title: "It only calls you when an agent needs you",
+      body: "Permission requests, questions, finished runs: the inbox sorts them by urgency, the Dock badge and system notifications keep you posted, and one click takes you to the session.",
+    },
+  },
+  changelog: {
+    title: "Changelog",
+    description: "New features and fixes in every Seperate release.",
+    intro: "New features and fixes in every Seperate release. The app updates itself to the latest version.",
+    label: "Changelog",
+    patches: (n: number) => `Patch releases · ${n} ${n === 1 ? "version" : "versions"}`,
+    earlierA: "Earlier changes are in the ",
+    earlierLink: "commit history",
+    earlierB: " on GitHub.",
+    date: (y: number, m: number, d: number) =>
+      new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
+  },
+  video: {
+    play: "Play",
+    pause: "Pause",
+    playWithSound: "Play with sound",
+    progress: "Progress",
+    unmute: "Unmute",
+    mute: "Mute",
+    fullscreen: "Full screen",
+  },
+  zoom: { viewer: "Image viewer", close: "Close", zoomOut: "Zoom out", zoomIn: "Zoom in", resetZoom: "Reset zoom", reset: "Reset" },
+  // Text inside the drawn app UI (feature cards, window still, changelog mocks).
+  ui: {
+    main: "Main",
+    justNow: "now",
+    done: "Done",
+    doneJustNow: "Done · now",
+    running: "Running",
+    working: "Working",
+    needsYou: "Needs you",
+    needsApproval: "Needs approval",
+    toReview: "To review",
+    addProject: "+ Add Project ⌄",
+    terminal: "Terminal",
+    workspace: "Work",
+    // sidebar card
+    searchByTitle: "Add search by title",
+    darkMode: "dark-mode",
+    darkModeToggle: "Dark mode toggle",
+    usersTests: "Add tests for /users",
+    jsonOutput: "Add --json output",
+    // panes card
+    panesSummary: "4 panes · from 3 projects ·",
+    oneNeedsYou: "1 waiting on you",
+    // inbox card
+    inbox: "Inbox",
+    inboxSummary: "1 waiting on you · 1 to review",
+    markAllRead: "Mark All as Read",
+    all: "All",
+    inboxDoneMessage: "Added searchNotes(query): searches titles, case-insensitive",
+    inboxRunningMessage: "Running · for 2m 5s",
+    inboxFooter: "Click a row to jump to that session and mark it read · ⌘I open / close",
+    // window still
+    rewriteInstaller: "Rewrite installer",
+    sparkleUpdates: "Sparkle updates",
+    migrateBilling: "Migrate billing tables",
+    windowSummary: "3 panes · 5 tabs · from 2 projects ·",
+    needsApprovalPrompt: "> Needs your approval:",
+    editFile: "Edit InstallerWindow.swift?",
+    yesNo: "1. Yes   2. No",
+    // changelog mocks
+    fixLoginRedirect: "Fix login redirect",
+    closeTab: "Close Tab",
+    closeOtherTabs: "Close Other Tabs",
+    closeLeftTabs: "Close Tabs to the Left",
+    closeRightTabs: "Close Tabs to the Right",
+    closeAllTabs: "Close All Tabs",
+    skipPermissions: "Claude Code (Skip Permissions)",
+    skipPermissionsTip: "Starts with --dangerously-skip-permissions: no permission prompts; runs commands and edits files directly",
+    newWorktree: "New Worktree…",
+    showInFinder: "Show in Finder",
+    copyPath: "Copy Path",
+    moveToWorkspace: "Move to Workspace",
+    // language menu mock (0.3.0)
+    menuFile: "File",
+    menuEdit: "Edit",
+    menuLayout: "Layout",
+    menuWindow: "Window",
+    aboutSeperate: "About Seperate",
+    checkUpdates: "Check for Updates…",
+    checkAtLaunch: "Check for Updates at Launch",
+    autoInstall: "Automatically Download and Install Updates",
+    language: "Language",
+    systemDefault: "System Default",
+    hideSeperate: "Hide Seperate",
+    quitSeperate: "Quit Seperate",
+  },
+};
+
+export type Dict = typeof en;

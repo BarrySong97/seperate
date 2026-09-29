@@ -3,13 +3,14 @@
 /**
  * Video in the site's style. By default it plays muted and looping while on screen, like a moving
  * screenshot, and pauses when scrolled away. Hover or focus shows the controls: play/pause, scrub,
- * time, sound, fullscreen. With `soundButton`, a "有声播放" pill restarts it from the top with sound.
+ * time, sound, fullscreen. With `soundButton`, a "play with sound" pill restarts it from the top with sound.
  * People who ask for reduced motion get a paused first frame with a play button instead of autoplay.
  * With `autoPlay={false}` it waits on its poster with a play button; the first play starts from the
- * top with sound (so the "有声播放" pill is not shown).
+ * top with sound (so the "play with sound" pill is not shown).
  */
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { useDict } from "@/i18n/client";
 
 type Props = {
   src: string;
@@ -44,6 +45,7 @@ function Svg({ children, className = "size-4" }: { children: React.ReactNode; cl
 }
 
 export function VideoPlayer({ src, poster, caption, label, soundButton, autoPlay = true, className }: Props) {
+  const t = useDict().video;
   const box = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -160,7 +162,7 @@ export function VideoPlayer({ src, poster, caption, label, soundButton, autoPlay
           <button
             type="button"
             onClick={play}
-            aria-label="播放"
+            aria-label={t.play}
             className="absolute top-1/2 left-1/2 flex size-18 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-cta/90 text-ground shadow-lg transition-transform hover:scale-105"
           >
             <Svg className="size-7">{Icon.play}</Svg>
@@ -174,7 +176,7 @@ export function VideoPlayer({ src, poster, caption, label, soundButton, autoPlay
             className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-cta/90 px-3.5 py-1.5 text-[13px] font-semibold text-ground shadow-lg backdrop-blur transition-colors hover:bg-white"
           >
             <Svg className="size-3.5">{Icon.sound}</Svg>
-            有声播放
+            {t.playWithSound}
           </button>
         )}
 
@@ -184,7 +186,7 @@ export function VideoPlayer({ src, poster, caption, label, soundButton, autoPlay
             playing ? "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100" : "opacity-100",
           )}
         >
-          <button type="button" onClick={play} aria-label={playing ? "暂停" : "播放"} className={controlButton}>
+          <button type="button" onClick={play} aria-label={playing ? t.pause : t.play} className={controlButton}>
             <Svg>{playing ? Icon.pause : Icon.play}</Svg>
           </button>
           <span className="w-20 shrink-0 font-mono text-[11px] text-cta/80 tabular-nums">
@@ -206,15 +208,15 @@ export function VideoPlayer({ src, poster, caption, label, soundButton, autoPlay
               setTouched(true);
               seek(Number(e.target.value));
             }}
-            aria-label="进度"
+            aria-label={t.progress}
             disabled={!duration}
             style={{ "--p": `${duration ? (Math.min(now, duration) / duration) * 100 : 0}%` } as React.CSSProperties}
             className="h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-[linear-gradient(to_right,var(--color-cta)_var(--p),rgb(255_255_255/0.25)_var(--p))] accent-cta disabled:cursor-default [&::-moz-range-thumb]:size-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-cta [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cta"
           />
-          <button type="button" onClick={toggleMute} aria-label={muted ? "打开声音" : "静音"} className={controlButton}>
+          <button type="button" onClick={toggleMute} aria-label={muted ? t.unmute : t.mute} className={controlButton}>
             <Svg>{muted ? Icon.muted : Icon.sound}</Svg>
           </button>
-          <button type="button" onClick={fullscreen} aria-label="全屏" className={controlButton}>
+          <button type="button" onClick={fullscreen} aria-label={t.fullscreen} className={controlButton}>
             <Svg>{Icon.expand}</Svg>
           </button>
         </div>

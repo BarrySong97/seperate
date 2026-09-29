@@ -1,1 +1,0 @@
-Seperate 的窗口：左侧按项目和 worktree 排列会话，右侧 Claude Code 和 Codex 并排运行。

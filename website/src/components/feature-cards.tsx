@@ -3,7 +3,11 @@
  * rebuilt in HTML on top (the sidebar's worktrees, split panes, the inbox). Colors, type and layout
  * follow the app (Sources/Workbench/UI, Theme.swift); names in them are examples, terminals are skeletons.
  * The backdrop and the small UI pieces are shared with the changelog's mocks (changelog-mocks.tsx).
+ * Text inside the UI follows the page's language (src/i18n, `ui`).
  */
+import { dict, type Dict, type Lang } from "@/i18n";
+
+type UI = Dict["ui"];
 
 // Film grain: SVG turbulence noise as a tiling data URI. `tone` is the grain's color (white lifts the
 // light areas, black digs into the dark ones); both layers together read as frosted, grainy print.
@@ -81,33 +85,33 @@ function Bell({ count }: { count: number }) {
 }
 
 /** Sidebar: project → worktree → session, with each session's state. */
-function SidebarUI() {
+function SidebarUI({ u }: { u: UI }) {
   const session = "flex h-7 items-center gap-2 rounded-[6px] pr-2 pl-9";
   return (
     <div className={`${ui} ${surface} flex h-full flex-col gap-0.5 p-2`}>
       <div className="flex h-7 items-center gap-2 px-1.5 font-semibold"><Chevron /><Badge letter="L" color="#3f5a44" />lumen-notes</div>
-      <div className="flex h-6 items-center gap-1.5 pl-6 text-[11px] text-[#9c9d95]"><Chevron />主目录</div>
+      <div className="flex h-6 items-center gap-1.5 pl-6 text-[11px] text-[#9c9d95]"><Chevron />{u.main}</div>
       <div className={session}>
-        <ClaudeIcon /><span className="min-w-0 flex-1 truncate font-medium">加上按标题搜索</span>
-        <span className="text-[11px] text-[#9c9d95]">完成 · 刚刚</span><Dot color="#d6d3c3" />
+        <ClaudeIcon /><span className="min-w-0 flex-1 truncate font-medium">{u.searchByTitle}</span>
+        <span className="text-[11px] text-[#9c9d95]">{u.doneJustNow}</span><Dot color="#d6d3c3" />
       </div>
-      <div className="flex h-6 items-center gap-1.5 pl-6 text-[11px] text-[#9c9d95]"><Chevron />暗色模式</div>
+      <div className="flex h-6 items-center gap-1.5 pl-6 text-[11px] text-[#9c9d95]"><Chevron />{u.darkMode}</div>
       <div className={session}>
-        <CodexIcon /><span className="min-w-0 flex-1 truncate font-medium">暗色模式开关</span>
-        <span className="text-[11px] text-[#9c9d95]">运行中</span><Spinner />
+        <CodexIcon /><span className="min-w-0 flex-1 truncate font-medium">{u.darkModeToggle}</span>
+        <span className="text-[11px] text-[#9c9d95]">{u.running}</span><Spinner />
       </div>
       <div className="mt-1 flex h-7 items-center gap-2 px-1.5 font-semibold"><Chevron /><Badge letter="P" color="#5a4a3a" />pixel-api</div>
       <div className={`${session} bg-[#34352f]`}>
-        <ClaudeIcon /><span className="min-w-0 flex-1 truncate font-medium">补上 /users 的测试</span>
-        <span className="text-[11px] text-[#9c9d95]">刚刚</span><Spinner />
+        <ClaudeIcon /><span className="min-w-0 flex-1 truncate font-medium">{u.usersTests}</span>
+        <span className="text-[11px] text-[#9c9d95]">{u.justNow}</span><Spinner />
       </div>
       <div className="mt-1 flex h-7 items-center gap-2 px-1.5 font-semibold"><Chevron /><Badge letter="A" color="#6a3d33" />atlas-cli</div>
       <div className={`${session} bg-[#e6b450]/12`}>
-        <CodexIcon /><span className="min-w-0 flex-1 truncate font-medium">加上 --json 输出</span>
-        <span className="text-[11px] font-medium text-[#e6b450]">等待确认</span><Dot color="#e6b450" />
+        <CodexIcon /><span className="min-w-0 flex-1 truncate font-medium">{u.jsonOutput}</span>
+        <span className="text-[11px] font-medium whitespace-nowrap text-[#e6b450]">{u.needsApproval}</span><Dot color="#e6b450" />
       </div>
       <div className="mt-auto flex items-center justify-between border-t border-[#34352f] px-1.5 pt-2 text-[11px] text-[#6d6e67]">
-        <span>+ 添加项目 ⌄</span>
+        <span>{u.addProject}</span>
         <Bell count={1} />
       </div>
     </div>
@@ -139,34 +143,34 @@ function Pane({ icon, tab, project, status, statusColor, lines, focused }: {
 const dim = "#4a4b44", mid = "#5d5e56";
 
 /** The window in a 2×2 split: top bar with the layout picker, four agents side by side. */
-function PanesUI() {
+function PanesUI({ u }: { u: UI }) {
   return (
     <div className={`${ui} ${surface} flex h-full flex-col overflow-hidden bg-[#1e1f1a]`}>
       <div className="flex h-8 items-center gap-2 border-b border-[#34352f] px-3 text-[11px]">
-        <span className="font-semibold">工作</span>
-        <span className="truncate text-[#9c9d95]">4 栏 · 来自 3 个项目 ·</span>
-        <span className="font-semibold whitespace-nowrap text-[#e6b450]">1 个需要你</span>
+        <span className="font-semibold whitespace-nowrap">{u.workspace}</span>
+        <span className="truncate text-[#9c9d95]">{u.panesSummary}</span>
+        <span className="font-semibold whitespace-nowrap text-[#e6b450]">{u.oneNeedsYou}</span>
         <span className="ml-auto flex gap-1">
           {[1, 2, 3].map((n) => <span key={n} className="h-2.5 w-3.5 rounded-[2px] border border-[#6d6e67]" />)}
           <span className="grid h-2.5 w-3.5 grid-cols-2 gap-px rounded-[2px] bg-[#e8e8e2] p-px"><i className="bg-[#1e1f1a]" /><i className="bg-[#1e1f1a]" /><i className="bg-[#1e1f1a]" /><i className="bg-[#1e1f1a]" /></span>
         </span>
       </div>
       <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-1.5 p-1.5">
-        <Pane icon={<ClaudeIcon />} tab="Claude Code" project="lumen-notes / 主目录" status="完成" statusColor="#9c9d95" focused
+        <Pane icon={<ClaudeIcon />} tab="Claude Code" project={`lumen-notes / ${u.main}`} status={u.done} statusColor="#9c9d95" focused
           lines={[[72, mid], [48, dim], [86, "#3c5a3a"], [64, "#3c5a3a"], [40, dim], [78, mid], [55, dim]]} />
-        <Pane icon={<CodexIcon />} tab="暗色模式" project="lumen-notes / 暗色模式" status="运行中" statusColor="#9ccf6c"
+        <Pane icon={<CodexIcon />} tab={u.darkMode} project={`lumen-notes / ${u.darkMode}`} status={u.running} statusColor="#9ccf6c"
           lines={[[58, mid], [80, dim], [44, "#44507a"], [70, dim], [36, mid], [62, dim], [50, dim]]} />
-        <Pane icon={<ClaudeIcon />} tab="Claude Code" project="pixel-api / 主目录" status="工作中" statusColor="#9ccf6c"
+        <Pane icon={<ClaudeIcon />} tab="Claude Code" project={`pixel-api / ${u.main}`} status={u.working} statusColor="#9ccf6c"
           lines={[[66, mid], [84, dim], [52, dim], [74, "#44507a"], [46, mid], [68, dim], [38, dim]]} />
-        <Pane icon={<CodexIcon />} tab="atlas-cli" project="atlas-cli / 主目录" status="需要你" statusColor="#e6b450"
+        <Pane icon={<CodexIcon />} tab="atlas-cli" project={`atlas-cli / ${u.main}`} status={u.needsYou} statusColor="#e6b450"
           lines={[[60, mid], [42, dim], [76, dim], [54, "#6b5a2e"], [82, "#6b5a2e"], [48, mid], [30, dim]]} />
       </div>
     </div>
   );
 }
 
-function InboxRow({ icon, title, tag, tagClass, place, message }: {
-  icon: React.ReactNode; title: string; tag: string; tagClass: string; place: string; message: string;
+function InboxRow({ icon, title, tag, tagClass, place, message, when }: {
+  icon: React.ReactNode; title: string; tag: string; tagClass: string; place: string; message: string; when: string;
 }) {
   return (
     <div className="flex gap-2 py-1.5">
@@ -175,7 +179,7 @@ function InboxRow({ icon, title, tag, tagClass, place, message }: {
         <div className="flex items-center gap-1.5">
           <span className="font-semibold">{title}</span>
           <span className={`rounded-[4px] px-1 py-[3px] text-[9px] font-semibold ${tagClass}`}>{tag}</span>
-          <span className="ml-auto text-[10px] text-[#6d6e67]">刚刚</span>
+          <span className="ml-auto text-[10px] text-[#6d6e67]">{when}</span>
         </div>
         <span className="text-[10px] text-[#9c9d95]">{place}</span>
         <span className="truncate text-[11px] leading-snug text-[#c9c9c2]">{message}</span>
@@ -185,46 +189,45 @@ function InboxRow({ icon, title, tag, tagClass, place, message }: {
 }
 
 /** The inbox: sessions that need you, results to look at, what is still running. */
-function InboxUI() {
+function InboxUI({ u }: { u: UI }) {
   const group = "pt-2.5 pb-0.5 text-[10px] font-semibold";
   return (
     <div className={`${ui} ${surface} flex h-full flex-col bg-[#2b2c26] px-3 pt-3 pb-2`}>
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold">收件箱</span>
-          <span className="text-[10.5px] text-[#9c9d95]">1 个需要你 · 1 个待查看</span>
-          <span className="ml-auto text-[10.5px] text-[#9c9d95]">全部标为已读</span>
+          <span className="text-[13px] font-semibold">{u.inbox}</span>
+          <span className="truncate text-[10.5px] text-[#9c9d95]">{u.inboxSummary}</span>
+          <span className="ml-auto text-[10.5px] whitespace-nowrap text-[#9c9d95]">{u.markAllRead}</span>
         </div>
         <div className="mt-2.5 grid grid-cols-4 rounded-[6px] bg-[#1e1f1a] p-0.5 text-center text-[10.5px]">
-          <span className="rounded-[5px] bg-[#42433c] py-1 font-medium">全部 2</span>
-          <span className="py-1 text-[#c9c9c2]">需要你 1</span>
-          <span className="py-1 text-[#c9c9c2]">待查看 1</span>
-          <span className="py-1 text-[#c9c9c2]">进行中 1</span>
+          <span className="truncate rounded-[5px] bg-[#42433c] px-0.5 py-1 font-medium">{u.all} 2</span>
+          <span className="truncate px-0.5 py-1 text-[#c9c9c2]">{u.needsYou} 1</span>
+          <span className="truncate px-0.5 py-1 text-[#c9c9c2]">{u.toReview} 1</span>
+          <span className="truncate px-0.5 py-1 text-[#c9c9c2]">{u.running} 1</span>
         </div>
-        <div className={`${group} text-[#e6b450]`}>需要你 · 1</div>
-        <InboxRow icon={<CodexIcon />} title="atlas-cli" tag="需要授权" tagClass="bg-[#e6b450]/20 text-[#e6b450]" place="atlas-cli" message="Approval requested: cargo run -- --json" />
-        <div className={`${group} text-[#c9c9c2]`}>待查看 · 1</div>
-        <InboxRow icon={<ClaudeIcon />} title="Claude Code" tag="待查看" tagClass="bg-[#d6d3c3]/15 text-[#d6d3c3]" place="lumen-notes" message="已加上 searchNotes(query)：按标题搜索，忽略大小写" />
-        <div className={`${group} text-[#9ccf6c]`}>进行中 · 1</div>
-        <InboxRow icon={<ClaudeIcon />} title="Claude Code" tag="进行中" tagClass="bg-[#9ccf6c]/18 text-[#9ccf6c]" place="pixel-api" message="正在运行 · 已 2 分钟" />
-        <div className="mt-auto border-t border-[#34352f] pt-2 text-[9.5px] text-[#6d6e67]">点一行 = 跳到那个会话并标为已读 · ⌘I 打开 / 关闭</div>
+        <div className={`${group} text-[#e6b450]`}>{u.needsYou} · 1</div>
+        <InboxRow icon={<CodexIcon />} title="atlas-cli" tag={u.needsApproval} tagClass="bg-[#e6b450]/20 text-[#e6b450]" place="atlas-cli" message="Approval requested: cargo run -- --json" when={u.justNow} />
+        <div className={`${group} text-[#c9c9c2]`}>{u.toReview} · 1</div>
+        <InboxRow icon={<ClaudeIcon />} title="Claude Code" tag={u.toReview} tagClass="bg-[#d6d3c3]/15 text-[#d6d3c3]" place="lumen-notes" message={u.inboxDoneMessage} when={u.justNow} />
+        <div className={`${group} text-[#9ccf6c]`}>{u.running} · 1</div>
+        <InboxRow icon={<ClaudeIcon />} title="Claude Code" tag={u.running} tagClass="bg-[#9ccf6c]/18 text-[#9ccf6c]" place="pixel-api" message={u.inboxRunningMessage} when={u.justNow} />
+        <div className="mt-auto border-t border-[#34352f] pt-2 text-[9.5px] text-[#6d6e67]">{u.inboxFooter}</div>
     </div>
   );
 }
 
-export function FeatureCards() {
+export function FeatureCards({ lang }: { lang: Lang }) {
+  const t = dict(lang);
+  const f = t.features;
   return (
     <div className="grid gap-x-5 gap-y-14 md:grid-cols-3">
-      <Card backdrop="blue" title="一个 agent 一个 worktree"
-        body="侧栏按项目、worktree、会话三层排。新建 worktree 时挑基础分支就行；每个会话旁边的状态告诉你它在跑、在等，还是做完了。">
-        <SidebarUI />
+      <Card backdrop="blue" title={f.worktrees.title} body={f.worktrees.body}>
+        <SidebarUI u={t.ui} />
       </Card>
-      <Card backdrop="green" title="不同项目的 agent，并排跑"
-        body="两栏、三栏、四栏或 2×2，一键切换。Tab 可以拖到别的栏；终端用 Ghostty 的引擎渲染，滚几万行也不卡。">
-        <PanesUI />
+      <Card backdrop="green" title={f.panes.title} body={f.panes.body}>
+        <PanesUI u={t.ui} />
       </Card>
-      <Card backdrop="amber" title="agent 等你的时候，才来叫你"
-        body="要权限、问问题、跑完了，收件箱按轻重排好，Dock 角标和系统通知同步提醒，点一下就跳到那个会话。">
-        <InboxUI />
+      <Card backdrop="amber" title={f.inbox.title} body={f.inbox.body}>
+        <InboxUI u={t.ui} />
       </Card>
     </div>
   );

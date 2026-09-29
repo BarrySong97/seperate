@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { thumbHashToAverageRGBA, thumbHashToDataURL } from "thumbhash";
 import { cn } from "@/lib/cn";
+import { useDict } from "@/i18n/client";
 
 type Props = {
   src: string;
@@ -40,6 +41,7 @@ function base64ToBytes(b64: string) {
 }
 
 export function ZoomImage({ src, alt, caption, width, height, thumbhash, zoomable = true, className }: Props) {
+  const t = useDict().zoom;
   const text = caption ?? alt ?? "";
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
@@ -191,7 +193,7 @@ export function ZoomImage({ src, alt, caption, width, height, thumbhash, zoomabl
             className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden p-4"
             role="dialog"
             aria-modal="true"
-            aria-label="图片查看器"
+            aria-label={t.viewer}
             onWheel={(e) => changeZoom(e.deltaY > 0 ? -STEP : STEP)}
             onClick={close}
           >
@@ -205,7 +207,7 @@ export function ZoomImage({ src, alt, caption, width, height, thumbhash, zoomabl
             >
               <button
                 type="button"
-                aria-label="关闭"
+                aria-label={t.close}
                 onClick={(e) => {
                   e.stopPropagation();
                   close();
@@ -241,23 +243,23 @@ export function ZoomImage({ src, alt, caption, width, height, thumbhash, zoomabl
               className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/60 p-1 text-white shadow-lg backdrop-blur-sm"
               onClick={(e) => e.stopPropagation()}
             >
-              <button type="button" aria-label="缩小" disabled={zoom <= MIN_ZOOM} onClick={() => changeZoom(-STEP)} className={iconButton}>
+              <button type="button" aria-label={t.zoomOut} disabled={zoom <= MIN_ZOOM} onClick={() => changeZoom(-STEP)} className={iconButton}>
                 −
               </button>
               <span className="min-w-12 text-center font-mono text-[11px] tabular-nums" aria-live="polite">
                 {Math.round(zoom * 100)}%
               </span>
-              <button type="button" aria-label="放大" disabled={zoom >= MAX_ZOOM} onClick={() => changeZoom(STEP)} className={iconButton}>
+              <button type="button" aria-label={t.zoomIn} disabled={zoom >= MAX_ZOOM} onClick={() => changeZoom(STEP)} className={iconButton}>
                 +
               </button>
               <button
                 type="button"
-                aria-label="复位缩放"
+                aria-label={t.resetZoom}
                 disabled={zoom === MIN_ZOOM && pan.x === 0 && pan.y === 0}
                 onClick={reset}
                 className="ml-1 rounded-full px-3 py-2 font-mono text-[10px] tracking-wide transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-35"
               >
-                复位
+                {t.reset}
               </button>
             </div>
           </motion.div>

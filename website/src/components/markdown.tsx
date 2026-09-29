@@ -2,6 +2,7 @@ import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markd
 import remarkGfm from "remark-gfm";
 import { ChangelogMock } from "@/components/changelog-mocks";
 import { VideoPlayer } from "@/components/video-player";
+import type { Lang } from "@/i18n";
 import { ZoomImage } from "@/components/zoom-image";
 
 const isVideo = (src: string) => /\.(mp4|webm|mov)(\?|$)/i.test(src);
@@ -30,11 +31,12 @@ function fromTitle(title?: string | null) {
   return m ? { width: Number(m[1]), height: Number(m[2]), thumbhash } : {};
 }
 
-const components: Components = {
+// Per language: `mock:` drawings show the app's UI in the page's language.
+const components = (lang: Lang): Components => ({
   // Cursor-like reading rhythm: sans headings, 16px body, air before each section.
   h2: ({ children }) => <h3 className="mt-8 text-[22px] leading-snug font-semibold tracking-[-0.01em] text-ink">{children}</h3>,
   h3: ({ children }) => <h3 className="mt-8 text-[22px] leading-snug font-semibold tracking-[-0.01em] text-ink">{children}</h3>,
-  // "#### 改进" / "#### 修复": small headings for the short lists
+  // "#### Improvements" / "#### Fixes" (改进 / 修复): small headings for the short lists
   h4: ({ children }) => <h4 className="mt-6 text-base font-semibold text-text">{children}</h4>,
   p: ({ children, node }) => {
     // An image on its own line becomes a block, not an image inside a paragraph.
@@ -55,18 +57,18 @@ const components: Components = {
   img: ({ src, alt, title }) => {
     if (typeof src !== "string") return null;
     // `![caption](mock:tab-menu)`: a drawing of the app's UI from changelog-mocks.tsx.
-    if (src.startsWith("mock:")) return <ChangelogMock name={src.slice(5)} caption={alt || undefined} />;
+    if (src.startsWith("mock:")) return <ChangelogMock name={src.slice(5)} caption={alt || undefined} lang={lang} />;
     return <Media src={src} alt={alt} caption={alt || undefined} {...fromTitle(title)} />;
   },
-};
+});
 
 // Keep `mock:` sources; everything else gets react-markdown's usual URL sanitizing.
 const urlTransform = (url: string) => (url.startsWith("mock:") ? url : defaultUrlTransform(url));
 
-export function Markdown({ children }: { children: string }) {
+export function Markdown({ lang, children }: { lang: Lang; children: string }) {
   return (
     <div className="flex flex-col gap-4">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} urlTransform={urlTransform}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components(lang)} urlTransform={urlTransform}>
         {children}
       </ReactMarkdown>
     </div>

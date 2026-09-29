@@ -1,6 +1,7 @@
 ---
-# Copy to <version>.md (e.g. 0.2.0.md). Files starting with "_" are not published.
-version: 0.2.0
+# Copy to zh/<version>.md (e.g. 0.3.0.md) and write the English entry in en/<version>.md with the same
+# version, date, media and patch versions. Files starting with "_" are not published.
+version: 0.3.0
 date: 2026-10-09
 title: 一两个最大的新功能
 # Lead video or image, uploaded with `pnpm upload <file>`. Optional.
@@ -10,7 +11,7 @@ media:
   poster: https://<R2_PUBLIC_BASE>/seperate/<hash>.webp
 # Patch releases of this minor version, newest or oldest first (the page sorts them). Optional.
 patches:
-  - version: 0.2.1
+  - version: 0.3.1
     date: 2026-10-12
     notes: 修好了什么：以前会怎样，现在会怎样。
 ---
@@ -25,7 +26,7 @@ patches:
 
 ### 功能二的名字
 
-没有配图时就只写一段。视频也可以这样放：`![演示](…/clip.mp4)`。
+没有配图时就只写一段。视频也可以这样放：`![演示](…/clip.mp4)`；也可以画一张界面 mock：`![说明](mock:<name>)`。
 
 #### 改进
 
