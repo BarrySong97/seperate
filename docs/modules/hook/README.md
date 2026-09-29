@@ -22,6 +22,7 @@
 - 输出事件:通知名 `dev.seperate.agent-event`(与 `AgentHooks.eventName` 必须一致),userInfo 键:`session`、`agent`(claude/codex)、`event`(Claude hook 名;Codex 回合结束为 `Stop`)、`kind`(notification_type,或 `AskUserQuestion` / `ExitPlanMode`)、`message`(截断到 400 字符)。
 
 ## 注意事项
+- **提示语跟 app 同一种语言**:`AskUserQuestion` / `ExitPlanMode` 没有原文时的兜底文案用 hook 自己的 `tr`,语言取 `dev.workbench.app` 域的 `AppleLanguages`(没有就用系统语言),见 [ADR-0006](../../decisions/0006-bilingual-ui.md)。
 - **绝不能打印到 stdout**:Claude 会把 hook 的 stdout 当作额外上下文喂给模型。测试 `testHelperForwardsEvents` 专门断言输出为空。
 - **必须快、必须 exit 0**:任何失败都静默吞掉,绝不能阻塞或打断 Agent(Claude 侧 hook 超时设为 5 秒)。
 - 独立 target,不能 import Workbench 的代码;通知名和 userInfo 键是与 `Store.agentEvent` 之间的**隐式协议**,两边改动要同步(并更新 `docs/topics/agent-hooks.md`)。

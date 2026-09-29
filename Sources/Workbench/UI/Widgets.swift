@@ -311,20 +311,25 @@ final class HoverScrollView: NSScrollView {
 enum RelativeTime {
     static func short(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
         let secs = now.timeIntervalSince(date)
-        if secs < 60 { return "刚刚" }
-        if secs < 3600 { return "\(Int(secs / 60))分钟" }
-        if calendar.isDate(date, inSameDayAs: now) { return "\(Int(secs / 3600))小时" }
+        if secs < 60 { return tr("刚刚", "now") }
+        if secs < 3600 { return tr("\(Int(secs / 60))分钟", "\(Int(secs / 60))m") }
+        if calendar.isDate(date, inSameDayAs: now) { return tr("\(Int(secs / 3600))小时", "\(Int(secs / 3600))h") }
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 0
-        if days == 1 { return "昨天" }
-        if days < 7 { return "\(days)天" }
+        if days == 1 { return tr("昨天", "yesterday") }
+        if days < 7 { return tr("\(days)天", "\(days)d") }
         let c = calendar.dateComponents([.year, .month, .day], from: date)
         let sameYear = c.year == calendar.component(.year, from: now)
-        return sameYear ? "\(c.month!)月\(c.day!)日" : "\(c.year!)年\(c.month!)月\(c.day!)日"
+        if L10n.isChinese { return sameYear ? "\(c.month!)月\(c.day!)日" : "\(c.year!)年\(c.month!)月\(c.day!)日" }
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.calendar = calendar
+        f.setLocalizedDateFormatFromTemplate(sameYear ? "MMMd" : "yMMMd")
+        return f.string(from: date)
     }
 
     /// Full timestamp for tooltips.
     static func full(_ date: Date) -> String {
-        let f = DateFormatter(); f.locale = Locale(identifier: "zh_CN"); f.dateFormat = "yyyy年M月d日 HH:mm"
+        let f = DateFormatter()
+        f.locale = Locale(identifier: L10n.isChinese ? "zh_CN" : "en_US")
+        if L10n.isChinese { f.dateFormat = "yyyy年M月d日 HH:mm" } else { f.setLocalizedDateFormatFromTemplate("yMMMd HH:mm") }
         return f.string(from: date)
     }
 }

@@ -73,7 +73,7 @@ Workspace 可选 tint（`Workspace.tints`，`Sources/Workbench/Model/Models.swif
 - **Tooltip 带快捷键**：如「切换侧栏 ⌘B」「向右分屏 ⌘D」「收件箱 ⌘I」，改快捷键时一并改。
 
 ## 文案
-- 所有用户可见文案用**简体中文**：菜单栏（文件 / 编辑 / 布局 / 窗口）、右键菜单、tooltip、对话框、状态（等待确认 / 出错了 / 完成 · 5分钟 / 需要授权 / 等你回答 / 确认计划 / 待查看 / 进行中）。
+- 所有用户可见文案**中英双语**（`tr("中文", "English")`，跟随系统或菜单「语言」）：菜单栏（文件 / 编辑 / 布局 / 窗口 ↔ File / Edit / Layout / Window）、右键菜单、tooltip、对话框、状态（等待确认 / 出错了 / 完成 · 5分钟 ↔ Needs approval / Failed / Done · 5m）。英文菜单项用标题式大小写。
 - 产品与领域术语保留英文：Session、Tab、Worktree、Workspace、Git、Codex、Claude、Finder。中英文之间加空格（「新建 Worktree…」「3 个 Tab」），项目名等引用用「」。
 - 口吻口语、直接，以用户为主语：「放一个 Session 进来」「从左侧拖进来，或者选一个：」「N 个需要你」。确认框说清会发生什么、保留什么、怎么恢复。
 - 代码注释、文件头用英文。

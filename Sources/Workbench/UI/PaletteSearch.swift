@@ -21,7 +21,7 @@ struct PaletteEntry {
     }
     enum Section: Int, CaseIterable {
         case sessions, workspaces, create, commands
-        var title: String { ["会话", "Workspace", "新建", "命令"][rawValue] }
+        var title: String { [tr("会话", "Sessions"), "Workspace", tr("新建", "New"), tr("命令", "Commands")][rawValue] }
     }
 
     var kind: Kind

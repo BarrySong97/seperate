@@ -35,7 +35,7 @@ final class InstallerController: NSObject {
     private let install: Installation
     private var step: Step = .welcome
     private let progress = NSProgressIndicator()
-    private let ejectBox = NSButton(checkboxWithTitle: "完成后推出安装盘", target: nil, action: nil)
+    private let ejectBox = NSButton(checkboxWithTitle: tr("完成后推出安装盘", "Eject the installer disk when done"), target: nil, action: nil)
     private var progressTimer: Timer?
 
     /// The mounted DMG this installer runs from, if any.
@@ -55,7 +55,7 @@ final class InstallerController: NSObject {
         window.isMovableByWindowBackground = true
         window.appearance = NSAppearance(named: .darkAqua)
         window.backgroundColor = C.ground
-        window.title = "安装 Seperate"
+        window.title = tr("安装 Seperate", "Install Seperate")
         ejectBox.state = .on
         if let installed = install.installedInfo, installed.build > install.payloadInfo.build { step = .newerInstalled }
         render()
@@ -86,41 +86,41 @@ final class InstallerController: NSObject {
         case .welcome:
             let installed = install.installedInfo
             rows.append(label("Seperate \(payload.version)", size: 17, weight: .semibold))
-            rows.append(label("在一个窗口里并排运行 Claude Code、Codex 和终端。", color: C.muted))
+            rows.append(label(tr("在一个窗口里并排运行 Claude Code、Codex 和终端。", "Run Claude Code, Codex and terminals side by side in one window."), color: C.muted))
             rows.append(destinationPill())
             if let installed {
-                rows.append(label(installed.build == payload.build ? "这个版本已安装，可以重新安装" : "将替换已安装的 \(installed.version)", size: 11.5, color: C.wait))
+                rows.append(label(installed.build == payload.build ? tr("这个版本已安装，可以重新安装", "This version is already installed; you can reinstall it") : tr("将替换已安装的 \(installed.version)", "Replaces the installed \(installed.version)"), size: 11.5, color: C.wait))
             }
-            buttons = [button("取消", #selector(quit)), button(installed == nil ? "安装" : "更新", #selector(start), primary: true)]
+            buttons = [button(tr("取消", "Cancel"), #selector(quit)), button(installed == nil ? tr("安装", "Install") : tr("更新", "Update"), #selector(start), primary: true)]
         case .quitFirst(let note):
-            rows.append(label("Seperate 正在运行", size: 17, weight: .semibold))
-            rows.append(label(note ?? "需要先退出 Seperate 才能安装。正在运行的终端会像平常退出时一样提示你确认。", color: C.muted))
-            buttons = [button("取消", #selector(quit)), button("退出并安装", #selector(quitRunningAndInstall), primary: true)]
+            rows.append(label(tr("Seperate 正在运行", "Seperate is running"), size: 17, weight: .semibold))
+            rows.append(label(note ?? tr("需要先退出 Seperate 才能安装。正在运行的终端会像平常退出时一样提示你确认。", "Seperate needs to quit before installing. Running terminals will ask you to confirm, as when you quit normally."), color: C.muted))
+            buttons = [button(tr("取消", "Cancel"), #selector(quit)), button(tr("退出并安装", "Quit and Install"), #selector(quitRunningAndInstall), primary: true)]
         case .installing:
-            rows.append(label("正在安装…", size: 17, weight: .semibold))
+            rows.append(label(tr("正在安装…", "Installing…"), size: 17, weight: .semibold))
             progress.style = .bar
             progress.isIndeterminate = false
             progress.minValue = 0; progress.maxValue = 1
             progress.widthAnchor.constraint(equalToConstant: 300).isActive = true
             rows.append(progress)
-            rows.append(label("正在复制 Seperate.app 到“\(folderName)”", size: 11.5, color: C.faint))
-            let cancel = button("取消", #selector(quit)); cancel.isEnabled = false
+            rows.append(label(tr("正在复制 Seperate.app 到“\(folderName)”", "Copying Seperate.app to “\(folderName)”"), size: 11.5, color: C.faint))
+            let cancel = button(tr("取消", "Cancel"), #selector(quit)); cancel.isEnabled = false
             buttons = [cancel]
         case .done:
-            rows.append(label("已安装", size: 17, weight: .semibold))
-            rows.append(label("Seperate 已在“\(folderName)”里。以后的新版本会在应用内更新。", color: C.muted))
+            rows.append(label(tr("已安装", "Installed"), size: 17, weight: .semibold))
+            rows.append(label(tr("Seperate 已在“\(folderName)”里。以后的新版本会在应用内更新。", "Seperate is in “\(folderName)”. Future versions update inside the app."), color: C.muted))
             if volume != nil { rows.append(ejectBox) }
-            buttons = [button("完成", #selector(finish)), button("打开 Seperate", #selector(openAndFinish), primary: true)]
+            buttons = [button(tr("完成", "Done"), #selector(finish)), button(tr("打开 Seperate", "Open Seperate"), #selector(openAndFinish), primary: true)]
         case .newerInstalled:
             let v = install.installedInfo?.version ?? "?"
-            rows.append(label("已安装更新的版本", size: 17, weight: .semibold))
-            rows.append(label("“\(folderName)”里已经是 Seperate \(v)，比这个安装包（\(payload.version)）更新。", color: C.muted))
-            buttons = [button("关闭", #selector(quit)), button("打开 Seperate", #selector(openAndFinish), primary: true)]
+            rows.append(label(tr("已安装更新的版本", "A newer version is installed"), size: 17, weight: .semibold))
+            rows.append(label(tr("“\(folderName)”里已经是 Seperate \(v)，比这个安装包（\(payload.version)）更新。", "“\(folderName)” already has Seperate \(v), newer than this installer (\(payload.version))."), color: C.muted))
+            buttons = [button(tr("关闭", "Close"), #selector(quit)), button(tr("打开 Seperate", "Open Seperate"), #selector(openAndFinish), primary: true)]
         case .failed(let message):
-            rows.append(label("安装没有完成", size: 17, weight: .semibold))
+            rows.append(label(tr("安装没有完成", "Installation didn’t finish"), size: 17, weight: .semibold))
             rows.append(label(message, color: C.danger))
-            rows.append(label("原来的版本没有改动。", size: 11.5, color: C.faint))
-            buttons = [button("关闭", #selector(quit)), button("重试", #selector(start), primary: true)]
+            rows.append(label(tr("原来的版本没有改动。", "The existing version was not changed."), size: 11.5, color: C.faint))
+            buttons = [button(tr("关闭", "Close"), #selector(quit)), button(tr("重试", "Try Again"), #selector(start), primary: true)]
         }
 
         let stack = NSStackView(views: rows)
@@ -148,7 +148,7 @@ final class InstallerController: NSObject {
         window.defaultButtonCell = buttons.last?.cell as? NSButtonCell
     }
 
-    private var folderName: String { install.destinationDir.path == "/Applications" ? "应用程序" : install.destinationDir.path }
+    private var folderName: String { install.destinationDir.path == "/Applications" ? tr("应用程序", "Applications") : install.destinationDir.path }
 
     private func label(_ s: String, size: CGFloat = 12.5, weight: NSFont.Weight = .regular, color: NSColor = C.text) -> NSTextField {
         let l = NSTextField(wrappingLabelWithString: s)
@@ -160,7 +160,7 @@ final class InstallerController: NSObject {
     }
 
     private func destinationPill() -> NSView {
-        let row = NSStackView(views: [label("安装到", size: 11.5, color: C.muted), label(folderName, size: 11.5, weight: .medium)])
+        let row = NSStackView(views: [label(tr("安装到", "Install to"), size: 11.5, color: C.muted), label(folderName, size: 11.5, weight: .medium)])
         row.spacing = 8
         row.edgeInsets = NSEdgeInsets(top: 5, left: 12, bottom: 5, right: 12)
         row.wantsLayer = true
@@ -212,9 +212,9 @@ final class InstallerController: NSObject {
     private static func describe(_ error: Error) -> String {
         let e = error as NSError
         if e.domain == NSCocoaErrorDomain, e.code == NSFileWriteNoPermissionError {
-            return "没有权限写入目标文件夹。请用管理员账户运行，或把 Seperate 拖到“应用程序”。"
+            return tr("没有权限写入目标文件夹。请用管理员账户运行，或把 Seperate 拖到“应用程序”。", "No permission to write to the destination folder. Run as an administrator, or drag Seperate to Applications.")
         }
-        if e.domain == NSCocoaErrorDomain, e.code == NSFileWriteOutOfSpaceError { return "磁盘空间不足。" }
+        if e.domain == NSCocoaErrorDomain, e.code == NSFileWriteOutOfSpaceError { return tr("磁盘空间不足。", "Not enough disk space.") }
         return e.localizedDescription
     }
 
@@ -227,7 +227,7 @@ final class InstallerController: NSObject {
                 guard let self else { return t.invalidate() }
                 waited += 0.3
                 if self.running.isEmpty { t.invalidate(); self.start() }
-                else if waited > 30 { t.invalidate(); self.show(.quitFirst("Seperate 还没有退出。保存正在进行的工作，退出后再试。")) }
+                else if waited > 30 { t.invalidate(); self.show(.quitFirst(tr("Seperate 还没有退出。保存正在进行的工作，退出后再试。", "Seperate hasn’t quit yet. Save your work, quit it, then try again."))) }
             }
         }
     }
@@ -256,7 +256,7 @@ final class InstallerController: NSObject {
     /// Renders every step to PNGs without showing a window (`--snapshot DIR`).
     func snapshot(to dir: URL) throws {
         let steps: [(String, Step)] = [("1-welcome", .welcome), ("2-quit", .quitFirst(nil)), ("3-installing", .installing),
-                                       ("4-done", .done), ("5-newer", .newerInstalled), ("6-failed", .failed("磁盘空间不足。"))]
+                                       ("4-done", .done), ("5-newer", .newerInstalled), ("6-failed", .failed(tr("磁盘空间不足。", "Not enough disk space.")))]
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         for (name, s) in steps {
             show(s)

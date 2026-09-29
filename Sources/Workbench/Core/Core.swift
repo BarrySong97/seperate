@@ -73,7 +73,7 @@ enum Core {
     /// Opens (creating/migrating) the database; returns an error message on failure.
     static func dbOpen(_ path: String) -> String? {
         let r = call(wb_db_open(path), as: AddResult.self)
-        return r?.ok == true ? nil : (r?.error ?? "无法打开数据库")
+        return r?.ok == true ? nil : (r?.error ?? tr("无法打开数据库", "Couldn’t open the database"))
     }
 
     static func dbLoad() -> DBState? {
@@ -84,9 +84,9 @@ enum Core {
 
     /// Saves the whole state in one transaction; returns an error message on failure.
     static func dbSave(_ state: DBState) -> String? {
-        guard let data = try? JSONEncoder().encode(state), let json = String(data: data, encoding: .utf8) else { return "编码失败" }
+        guard let data = try? JSONEncoder().encode(state), let json = String(data: data, encoding: .utf8) else { return tr("编码失败", "Couldn’t encode the data") }
         let r = call(wb_db_save(json), as: AddResult.self)
-        return r?.ok == true ? nil : (r?.error ?? "保存失败")
+        return r?.ok == true ? nil : (r?.error ?? tr("保存失败", "Couldn’t save"))
     }
 
     /// Repository containing `path` (its main worktree plus linked worktrees); nil for a plain folder.
@@ -97,7 +97,7 @@ enum Core {
     static func worktreeAdd(root: String, dir: String) throws {
         let r = call(wb_worktree_add(root, dir), as: AddResult.self)
         if r?.ok != true {
-            throw NSError(domain: "Workbench", code: 1, userInfo: [NSLocalizedDescriptionKey: r?.error ?? "git worktree add 失败"])
+            throw NSError(domain: "Workbench", code: 1, userInfo: [NSLocalizedDescriptionKey: r?.error ?? tr("git worktree add 失败", "git worktree add failed")])
         }
     }
 
@@ -141,13 +141,13 @@ enum Core {
     }
 
     static func worktreeRemove(root: String, path: String, force: Bool) throws {
-        try check(wb_worktree_remove(root, path, force ? 1 : 0), fallback: "git worktree remove 失败")
+        try check(wb_worktree_remove(root, path, force ? 1 : 0), fallback: tr("git worktree remove 失败", "git worktree remove failed"))
     }
 
     /// `git branch -d`: nil when deleted, else why it was kept (usually "not fully merged").
     static func branchDelete(root: String, branch: String) -> String? {
         let r = call(wb_branch_delete(root, branch), as: AddResult.self)
-        return r?.ok == true ? nil : (r?.error ?? "删除分支失败")
+        return r?.ok == true ? nil : (r?.error ?? tr("删除分支失败", "Couldn’t delete the branch"))
     }
 
     static func listBranches(root: String) -> Branches {
@@ -155,12 +155,12 @@ enum Core {
     }
 
     static func worktreeAdd(root: String, dir: String, branch: String?, base: String) throws {
-        try check(wb_worktree_add_from(root, dir, branch, base), fallback: "git worktree add 失败")
+        try check(wb_worktree_add_from(root, dir, branch, base), fallback: tr("git worktree add 失败", "git worktree add failed"))
     }
 
     /// A new project folder with a README; `git` also makes it a repo on `main` with a first commit.
     static func projectCreate(dir: String, git: Bool) throws {
-        try check(wb_project_create(dir, git ? 1 : 0), fallback: "新建项目失败")
+        try check(wb_project_create(dir, git ? 1 : 0), fallback: tr("新建项目失败", "Couldn’t create the project"))
     }
 
     /// A folder the user's agents worked in, folded into its Git repo (see core/src/agents.rs).
@@ -177,13 +177,19 @@ enum Core {
     /// Website screenshots (ShotRenderer) only see the demo projects under this folder, nothing else of the user's.
     static let shotsRoot = ProcessInfo.processInfo.environment["SEPERATE_SHOTS_ROOT"].map { $0.hasSuffix("/") ? $0 : $0 + "/" }
 
+    /// Title of a conversation the agent never named (core leaves it empty so it follows the UI language).
+    static func untitled(_ kind: String) -> String {
+        kind == "codex" ? tr("Codex 会话", "Codex session") : tr("Claude 会话", "Claude session")
+    }
+
     /// Every Codex + Claude conversation, whatever its age (~100 ms for ~800).
     static func scanSessions() -> [AgentSession] {
         (call(wb_scan_sessions(NSHomeDirectory(), 0), as: [ScannedSession].self) ?? [])
             .filter { s in shotsRoot.map { s.cwd.hasPrefix($0) } ?? true }
             .map {
             AgentSession(id: $0.id, kind: AgentKind(rawValue: $0.kind) ?? .shell, agentSessionID: $0.agentSessionId,
-                         cwd: $0.cwd, title: $0.title, lastActivity: Date(timeIntervalSince1970: TimeInterval($0.lastActivity)))
+                         cwd: $0.cwd, title: $0.title.isEmpty ? Self.untitled($0.kind) : $0.title,
+                         lastActivity: Date(timeIntervalSince1970: TimeInterval($0.lastActivity)))
         }
     }
 }

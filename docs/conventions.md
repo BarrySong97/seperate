@@ -4,7 +4,7 @@
 - Swift:类型 `PascalCase`,函数/变量 `camelCase`;文件名 = 主类型名(`SidebarView.swift`)。
 - Rust:模块/函数 `snake_case`;C ABI 导出函数统一 `wb_` 前缀(见 `core/src/ffi.rs` / `core/include/workbench_core.h`)。
 - 脚本:`scripts/<动词>-<对象>.sh`(`build-app.sh`、`package-dmg.sh`)。
-- UI 文案用中文(菜单、按钮、对话框);代码、注释、提交信息用英文。
+- UI 文案中英双语:每条写成 `tr("中文", "English")`(英文复数用 `plural(n, "tab")`),见 [ADR-0006](decisions/0006-bilingual-ui.md);代码、注释、提交信息用英文。
 
 ## 目录与文件结构
 - `Sources/Workbench/<层>/`:`App`(启动/更新)· `Model`(状态与持久化)· `Layout`(分屏树)· `Terminal`(libghostty)· `UI`(AppKit 视图)· `Core`(Rust 桥接)。

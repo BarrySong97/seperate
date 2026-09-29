@@ -49,12 +49,22 @@ if [[ -f "$CODEX_ICON" ]]; then
   sips -z 64 64 "$CODEX_ICON" --out "$APP/Contents/Resources/codex-icon.png" >/dev/null
 fi
 
+# English + Simplified Chinese (ADR-0006). The strings live in code (tr); these folders tell macOS which
+# languages the app has, so AppKit's and Sparkle's own strings follow the app's language. Not left empty:
+# empty folders can get lost in the zip / DMG.
+for L in en zh-Hans; do
+  mkdir -p "$APP/Contents/Resources/$L.lproj"
+  echo '"CFBundleDisplayName" = "Seperate";' > "$APP/Contents/Resources/$L.lproj/InfoPlist.strings"
+done
+
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>CFBundleName</key><string>Seperate</string>
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
+  <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
   <key>CFBundleDisplayName</key><string>Seperate</string>
   <key>CFBundleIdentifier</key><string>dev.workbench.app</string>
   <key>CFBundleExecutable</key><string>Seperate</string>

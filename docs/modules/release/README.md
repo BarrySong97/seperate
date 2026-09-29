@@ -9,7 +9,7 @@
 - `setup-ghostty.sh` — 下载固定版本 Zig 到 `.deps/`,拉固定 commit 的 Ghostty,构建 `Vendor/GhosttyKit.xcframework` + `Vendor/ghostty-resources/`。
 - `build-core.sh` — `cargo build --release` 编 `core/`,包成 `Vendor/WorkbenchCore.xcframework`。
 - `build-app.sh [debug|release] [--open]` — 调 `build-core.sh` + `swift build`,组装 `build/Seperate.app`(含 Sparkle.framework、`seperate-hook`、ghostty 资源),写 `Info.plist`,codesign。
-- `build-installer.sh` — 把 `build/Seperate.app` 装进 `build/安装 Seperate.app`。
+- `build-installer.sh` — 把 `build/Seperate.app` 装进 `build/Install Seperate.app`(中文系统显示「安装 Seperate」)。
 - `package-dmg.sh` — 出 `build/Seperate-<ver>.zip`(Sparkle 用)和 `build/Seperate-<ver>.dmg`(dmgbuild,venv 在 `.deps/dmgbuild`)。
 - `dmg-settings.py` — dmgbuild 配置(窗口、图标位置),由 `package-dmg.sh` 传入。
 - `make-installer-assets.swift` — 手动运行,生成 `Resources/Installer/` 下 DMG 背景和安装器图标(产物入库)。
@@ -39,7 +39,7 @@ Ghostty@pinned ──setup-ghostty.sh──▶ Vendor/GhosttyKit.xcframework ┤
 Sources/ ──build-app.sh (swift build + 组装 + codesign)──▶ build/Seperate.app
    ──[release.yml: notarytool + stapler]──▶
    ──package-dmg.sh──▶ build/Seperate-<ver>.zip
-                    └─ build-installer.sh ▶ build/安装 Seperate.app ─dmgbuild▶ build/Seperate-<ver>.dmg
+                    └─ build-installer.sh ▶ build/Install Seperate.app ─dmgbuild▶ build/Seperate-<ver>.dmg
    ──[公证 DMG]──▶ gh release create --draft (dmg + zip)
    ──make-appcast.sh (sign_update + SPARKLE_PRIVATE_KEY)──▶ build/appcast.xml ──gh release upload──▶ 发布 latest
 已安装 app ◀── SUFeedURL = releases/latest/download/appcast.xml ── Sparkle 校验 EdDSA 后更新

@@ -31,12 +31,12 @@ enum AgentKind: String, Codable, CaseIterable {
         switch self {
         case .codex: "Codex"
         case .claude: "Claude Code"
-        case .shell: "终端"
+        case .shell: tr("终端", "Terminal")
         }
     }
 
     /// Menu / palette label for Claude started with --dangerously-skip-permissions.
-    static let skipPermissionsName = "Claude Code（跳过权限）"
+    static let skipPermissionsName = tr("Claude Code（跳过权限）", "Claude Code (Skip Permissions)")
 }
 
 enum SessionStatus: String, Codable {
@@ -132,8 +132,8 @@ struct Workspace: Codable, Identifiable, Equatable {
 
     /// Preset colors, picked to stay readable on the dark ground; any other color can be chosen too.
     static let tints: [(color: UInt32, name: String)] = [
-        (0x8FA7BA, "石板蓝"), (0x9CCF6C, "草绿"), (0xE8916C, "陶土"), (0xC9A36B, "赭石"),
-        (0xB59AD6, "薰衣草"), (0x78C6DE, "湖蓝"), (0xE07A8F, "玫瑰"), (0xD6D3C3, "骨白"),
+        (0x8FA7BA, tr("石板蓝", "Slate")), (0x9CCF6C, tr("草绿", "Grass")), (0xE8916C, tr("陶土", "Clay")), (0xC9A36B, tr("赭石", "Ochre")),
+        (0xB59AD6, tr("薰衣草", "Lavender")), (0x78C6DE, tr("湖蓝", "Lake")), (0xE07A8F, tr("玫瑰", "Rose")), (0xD6D3C3, tr("骨白", "Bone")),
     ]
 
     /// The first preset no other workspace uses yet.

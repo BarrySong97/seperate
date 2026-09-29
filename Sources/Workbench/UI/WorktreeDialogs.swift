@@ -14,12 +14,12 @@ enum WorktreeDialogs {
     static func confirmHide(_ store: Store, _ wt: Worktree) {
         let running = store.openSessions(in: wt).filter { store.terminals[$0] != nil }.count
         let a = NSAlert()
-        a.messageText = "从 Seperate 移除「\(wt.alias)」？"
-        a.informativeText = "只是不再在 Seperate 里显示。文件夹、Git 里的 worktree 登记和会话记录都会保留，Codex / Claude 仍然可以在里面工作。"
-            + (running > 0 ? "\n\n它有 \(running) 个 Session 正在运行，会一起结束。" : "")
-            + "\n\n以后可以在项目菜单「已隐藏的 Worktree」里恢复。"
-        a.addButton(withTitle: "移除")
-        a.addButton(withTitle: "取消")
+        a.messageText = tr("从 Seperate 移除「\(wt.alias)」？", "Remove “\(wt.alias)” from Seperate?")
+        a.informativeText = tr("只是不再在 Seperate 里显示。文件夹、Git 里的 worktree 登记和会话记录都会保留，Codex / Claude 仍然可以在里面工作。", "It just stops showing in Seperate. The folder, its Git worktree entry and the session history are kept, and Codex / Claude can still work in it.")
+            + (running > 0 ? tr("\n\n它有 \(running) 个 Session 正在运行，会一起结束。", "\n\n\(running) of its sessions are running and will be stopped.") : "")
+            + tr("\n\n以后可以在项目菜单「已隐藏的 Worktree」里恢复。", "\n\nYou can bring it back later from “Hidden Worktrees” in the project menu.")
+        a.addButton(withTitle: tr("移除", "Remove"))
+        a.addButton(withTitle: tr("取消", "Cancel"))
         if a.runModal() == .alertFirstButtonReturn { store.hideWorktree(wt) }
     }
 
@@ -32,18 +32,18 @@ enum WorktreeDialogs {
 
         let a = NSAlert()
         a.alertStyle = .warning
-        a.messageText = "从磁盘删除「\(wt.alias)」？"
-        var info = "会执行 git worktree remove，删除这个文件夹。主仓库不受影响。\n\n路径：\(wt.path.abbreviatingHome)"
-        if let b = st.branch { info += "\n分支：\(b)" }
-        info += "\n状态：没有未提交的改动"
-        if let ahead = st.ahead, ahead > 0 { info += "，但有 \(ahead) 个提交还没推送到远端" }
+        a.messageText = tr("从磁盘删除「\(wt.alias)」？", "Delete “\(wt.alias)” from disk?")
+        var info = tr("会执行 git worktree remove，删除这个文件夹。主仓库不受影响。\n\n路径：\(wt.path.abbreviatingHome)", "Runs git worktree remove and deletes this folder. The main repository is not affected.\n\nPath: \(wt.path.abbreviatingHome)")
+        if let b = st.branch { info += tr("\n分支：\(b)", "\nBranch: \(b)") }
+        info += tr("\n状态：没有未提交的改动", "\nStatus: no uncommitted changes")
+        if let ahead = st.ahead, ahead > 0 { info += tr("，但有 \(ahead) 个提交还没推送到远端", ", but \(ahead) commits are not pushed yet") }
         let running = store.openSessions(in: wt).filter { store.terminals[$0] != nil }.count
-        if running > 0 { info += "\n\n它有 \(running) 个 Session 正在运行，会一起结束。" }
+        if running > 0 { info += tr("\n\n它有 \(running) 个 Session 正在运行，会一起结束。", "\n\n\(running) of its sessions are running and will be stopped.") }
         a.informativeText = info
         var branchBox: NSButton?
         if let b = st.branch {
-            let box = NSButton(checkboxWithTitle: "同时删除分支 \(b)", target: nil, action: nil)
-            let hint = NSTextField.label("只删已合并的分支；还没合并的会保留并告诉你。", font: NSFont.systemFont(ofSize: 11), color: .secondaryLabelColor)
+            let box = NSButton(checkboxWithTitle: tr("同时删除分支 \(b)", "Also delete branch \(b)"), target: nil, action: nil)
+            let hint = NSTextField.label(tr("只删已合并的分支；还没合并的会保留并告诉你。", "Only a merged branch is deleted; an unmerged one is kept and you are told."), font: NSFont.systemFont(ofSize: 11), color: .secondaryLabelColor)
             let v = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 40))
             box.frame = NSRect(x: 0, y: 18, width: 320, height: 20)
             hint.frame = NSRect(x: 20, y: 0, width: 300, height: 15)
@@ -51,8 +51,8 @@ enum WorktreeDialogs {
             a.accessoryView = v
             branchBox = box
         }
-        a.addButton(withTitle: "删除").hasDestructiveAction = true
-        a.addButton(withTitle: "取消")
+        a.addButton(withTitle: tr("删除", "Delete")).hasDestructiveAction = true
+        a.addButton(withTitle: tr("取消", "Cancel"))
         guard a.runModal() == .alertFirstButtonReturn else { return }
         run(store, wt, force: false, branch: branchBox?.state == .on ? st.branch : nil)
     }
@@ -61,18 +61,18 @@ enum WorktreeDialogs {
     private static func blockedByChanges(_ store: Store, _ wt: Worktree, _ st: Core.WorktreeStatus) {
         let a = NSAlert()
         a.alertStyle = .warning
-        a.messageText = "「\(wt.alias)」里有 \(st.dirty) 个未提交的改动"
-        var info = "为了不丢掉工作，默认不会删除。可以先在终端里提交或丢弃这些改动再删。\n\n"
+        a.messageText = tr("「\(wt.alias)」里有 \(st.dirty) 个未提交的改动", "“\(wt.alias)” has \(st.dirty) uncommitted changes")
+        var info = tr("为了不丢掉工作，默认不会删除。可以先在终端里提交或丢弃这些改动再删。\n\n", "So no work is lost, it is not deleted. Commit or discard these changes in a terminal first, then delete it.\n\n")
         info += st.changed.joined(separator: "\n")
-        if st.dirty > st.changed.count { info += "\n…还有 \(st.dirty - st.changed.count) 个" }
+        if st.dirty > st.changed.count { info += tr("\n…还有 \(st.dirty - st.changed.count) 个", "\n…and \(st.dirty - st.changed.count) more") }
         var meta: [String] = []
-        if let b = st.branch { meta.append("分支 \(b)") }
-        if let ahead = st.ahead, ahead > 0 { meta.append("比远端多 \(ahead) 个提交") }
+        if let b = st.branch { meta.append(tr("分支 \(b)", "branch \(b)")) }
+        if let ahead = st.ahead, ahead > 0 { meta.append(tr("比远端多 \(ahead) 个提交", "\(ahead) commits ahead of the remote")) }
         if !meta.isEmpty { info += "\n\n" + meta.joined(separator: " · ") }
         a.informativeText = info
-        a.addButton(withTitle: "好")
-        a.addButton(withTitle: "在终端里查看")
-        a.addButton(withTitle: "仍然删除（丢弃改动）").hasDestructiveAction = true
+        a.addButton(withTitle: tr("好", "OK"))
+        a.addButton(withTitle: tr("在终端里查看", "View in Terminal"))
+        a.addButton(withTitle: tr("仍然删除（丢弃改动）", "Delete Anyway (Discard Changes)")).hasDestructiveAction = true
         switch a.runModal() {
         case .alertSecondButtonReturn: store.newSession(.shell, in: wt)
         case .alertThirdButtonReturn: run(store, wt, force: true, branch: nil)
@@ -83,10 +83,10 @@ enum WorktreeDialogs {
     /// The folder is already gone: only git's record (and Seperate's) is left to clean up.
     private static func confirmPrune(_ store: Store, _ wt: Worktree) {
         let a = NSAlert()
-        a.messageText = "「\(wt.alias)」的文件夹已经不在了"
-        a.informativeText = "\(wt.path.abbreviatingHome)\n\n可以清理掉 Git 里残留的 worktree 登记（git worktree prune）。"
-        a.addButton(withTitle: "清理")
-        a.addButton(withTitle: "取消")
+        a.messageText = tr("「\(wt.alias)」的文件夹已经不在了", "The folder of “\(wt.alias)” is gone")
+        a.informativeText = tr("\(wt.path.abbreviatingHome)\n\n可以清理掉 Git 里残留的 worktree 登记（git worktree prune）。", "\(wt.path.abbreviatingHome)\n\nYou can clean up the leftover worktree entry in Git (git worktree prune).")
+        a.addButton(withTitle: tr("清理", "Clean Up"))
+        a.addButton(withTitle: tr("取消", "Cancel"))
         if a.runModal() == .alertFirstButtonReturn { run(store, wt, force: false, branch: nil) }
     }
 
@@ -94,13 +94,13 @@ enum WorktreeDialogs {
         do {
             if let kept = try store.deleteWorktree(wt, force: force, deleteBranch: branch), let branch {
                 let a = NSAlert()
-                a.messageText = "Worktree 已删除，分支 \(branch) 保留了"
-                a.informativeText = kept.contains("not fully merged") ? "这个分支还没有合并，为了不丢提交没有删除。" : kept
+                a.messageText = tr("Worktree 已删除，分支 \(branch) 保留了", "Worktree deleted; branch \(branch) was kept")
+                a.informativeText = kept.contains("not fully merged") ? tr("这个分支还没有合并，为了不丢提交没有删除。", "This branch is not merged yet, so it was kept to avoid losing commits.") : kept
                 a.runModal()
             }
         } catch {
             let a = NSAlert(error: error)
-            a.messageText = "没能删除「\(wt.alias)」"
+            a.messageText = tr("没能删除「\(wt.alias)」", "Couldn’t delete “\(wt.alias)”")
             a.runModal()
         }
     }
@@ -110,17 +110,17 @@ enum WorktreeDialogs {
     static func hiddenMenu(_ store: Store, _ p: Project) -> NSMenuItem? {
         let hidden = store.hiddenWorktrees(of: p)
         guard !hidden.isEmpty else { return nil }
-        let item = NSMenuItem(title: "已隐藏的 Worktree（\(hidden.count)）", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: tr("已隐藏的 Worktree（\(hidden.count)）", "Hidden Worktrees (\(hidden.count))"), action: nil, keyEquivalent: "")
         let sub = NSMenu()
         for h in hidden {
             let name = store.aliases[h.path] ?? (h.path as NSString).lastPathComponent
-            let it = ActionItem("恢复「\(name)」") { store.unhideWorktree(h.path) }
-            it.toolTip = h.path.abbreviatingHome + " · " + RelativeTime.short(h.at) + "前隐藏"
+            let it = ActionItem(tr("恢复「\(name)」", "Restore “\(name)”")) { store.unhideWorktree(h.path) }
+            it.toolTip = h.path.abbreviatingHome + " · " + tr("\(RelativeTime.short(h.at))前隐藏", "hidden \(RelativeTime.short(h.at))")
             sub.addItem(it)
         }
         if hidden.count > 1 {
             sub.addItem(.separator())
-            sub.addItem(ActionItem("全部恢复") { hidden.forEach { store.unhideWorktree($0.path) } })
+            sub.addItem(ActionItem(tr("全部恢复", "Restore All")) { hidden.forEach { store.unhideWorktree($0.path) } })
         }
         item.submenu = sub
         return item
@@ -144,12 +144,12 @@ final class NewWorktreeSheet: NSObject, NSTableViewDataSource, NSTableViewDelega
     private let tabs = NSSegmentedControl()
     private let search = NSSearchField()
     private let table = NSTableView()
-    private let newBranch = NSButton(radioButtonWithTitle: "新建分支", target: nil, action: nil)
-    private let detached = NSButton(radioButtonWithTitle: "不建分支（detached，分支在终端里自己切）", target: nil, action: nil)
+    private let newBranch = NSButton(radioButtonWithTitle: tr("新建分支", "New branch"), target: nil, action: nil)
+    private let detached = NSButton(radioButtonWithTitle: tr("不建分支（detached，分支在终端里自己切）", "No branch (detached; switch branches in the terminal yourself)"), target: nil, action: nil)
     private let branchName = NSTextField()
     private let location = NSTextField.label(font: NSFont.systemFont(ofSize: 11), color: .secondaryLabelColor)
     private let error = NSTextField.label(font: NSFont.systemFont(ofSize: 11), color: .systemRed)
-    private let create = NSButton(title: "创建", target: nil, action: nil)
+    private let create = NSButton(title: tr("创建", "Create"), target: nil, action: nil)
     private var branchEdited = false
     private static var current: NewWorktreeSheet?   // keeps the sheet alive while it is open
 
@@ -170,17 +170,17 @@ final class NewWorktreeSheet: NSObject, NSTableViewDataSource, NSTableViewDelega
     private func build() {
         let v = NSView(frame: panel.contentRect(forFrameRect: panel.frame))
         panel.contentView = v
-        let title = NSTextField.label("在 \(project.name) 新建 Worktree", font: NSFont.systemFont(ofSize: 14, weight: .semibold))
-        let nameLabel = NSTextField.label("名称", font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
-        name.placeholderString = "按用途起名，比如 测试 / 导出分页"
+        let title = NSTextField.label(tr("在 \(project.name) 新建 Worktree", "New Worktree in \(project.name)"), font: NSFont.systemFont(ofSize: 14, weight: .semibold))
+        let nameLabel = NSTextField.label(tr("名称", "Name"), font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
+        name.placeholderString = tr("按用途起名，比如 测试 / 导出分页", "Name it for its purpose, like tests / export-paging")
         name.delegate = self
-        let baseLabel = NSTextField.label("基于分支", font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
+        let baseLabel = NSTextField.label(tr("基于分支", "Base branch"), font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
         tabs.segmentCount = 2
-        tabs.setLabel("本地 \(branches.local.count)", forSegment: 0)
-        tabs.setLabel("远程 \(branches.remote.count)", forSegment: 1)
+        tabs.setLabel(tr("本地 \(branches.local.count)", "Local \(branches.local.count)"), forSegment: 0)
+        tabs.setLabel(tr("远程 \(branches.remote.count)", "Remote \(branches.remote.count)"), forSegment: 1)
         tabs.selectedSegment = 0
         tabs.target = self; tabs.action = #selector(tabChanged)
-        search.placeholderString = "搜索分支…"
+        search.placeholderString = tr("搜索分支…", "Search branches…")
         search.delegate = self
         table.addTableColumn(NSTableColumn(identifier: .init("b")))
         table.headerView = nil
@@ -191,13 +191,13 @@ final class NewWorktreeSheet: NSObject, NSTableViewDataSource, NSTableViewDelega
         scroll.documentView = table
         scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
-        let modeLabel = NSTextField.label("检出方式", font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
+        let modeLabel = NSTextField.label(tr("检出方式", "Checkout"), font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
         newBranch.state = .on
         newBranch.target = self; newBranch.action = #selector(modeChanged)
         detached.target = self; detached.action = #selector(modeChanged)
         branchName.font = NSFont.monospacedSystemFont(ofSize: 11.5, weight: .regular)
         branchName.delegate = self
-        let cancel = NSButton(title: "取消", target: self, action: #selector(cancelSheet))
+        let cancel = NSButton(title: tr("取消", "Cancel"), target: self, action: #selector(cancelSheet))
         cancel.keyEquivalent = "\u{1b}"
         create.target = self; create.action = #selector(createWorktree)
         create.keyEquivalent = "\r"
@@ -250,16 +250,16 @@ final class NewWorktreeSheet: NSObject, NSTableViewDataSource, NSTableViewDelega
         let n = trimmedName
         if !branchEdited { branchName.stringValue = n.isEmpty ? "" : "wt/" + n }
         branchName.isEnabled = newBranch.state == .on
-        location.stringValue = "位置：" + store.newWorktreeDir(in: project, name: n.isEmpty ? "<名称>" : n).abbreviatingHome
+        location.stringValue = tr("位置：", "Location: ") + store.newWorktreeDir(in: project, name: n.isEmpty ? tr("<名称>", "<name>") : n).abbreviatingHome
         let problem: String? = {
             if n.isEmpty { return nil }
-            if n.contains("/") || n.contains("..") { return "名称里不能有 / 或 .." }
-            if FileManager.default.fileExists(atPath: store.newWorktreeDir(in: project, name: n)) { return "这个位置已经有文件夹了" }
-            if selected == nil { return "选一个基于的分支" }
+            if n.contains("/") || n.contains("..") { return tr("名称里不能有 / 或 ..", "The name can’t contain / or ..") }
+            if FileManager.default.fileExists(atPath: store.newWorktreeDir(in: project, name: n)) { return tr("这个位置已经有文件夹了", "A folder already exists there") }
+            if selected == nil { return tr("选一个基于的分支", "Choose a base branch") }
             if newBranch.state == .on {
                 let b = branchName.stringValue.trimmingCharacters(in: .whitespaces)
-                if b.isEmpty { return "填写新分支名" }
-                if branches.local.contains(where: { $0.name == b }) { return "分支 \(b) 已经存在" }
+                if b.isEmpty { return tr("填写新分支名", "Enter a new branch name") }
+                if branches.local.contains(where: { $0.name == b }) { return tr("分支 \(b) 已经存在", "Branch \(b) already exists") }
             }
             return nil
         }()

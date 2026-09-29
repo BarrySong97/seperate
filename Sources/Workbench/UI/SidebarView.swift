@@ -31,9 +31,9 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
     private let slider = NSView()           // clips the outline during workspace slides
     private let footer = NSView()
     private let addButton = NSButton()
-    private let addMore = IconButton(symbol: "chevron.down", size: 8, tooltip: "更多添加方式", side: 20)
+    private let addMore = IconButton(symbol: "chevron.down", size: 8, tooltip: tr("更多添加方式", "More ways to add"), side: 20)
     // The inbox bell, at the right end of the "添加项目" row.
-    private let bell = IconButton(symbol: "bell", size: 12, tooltip: "收件箱 ⌘I", side: 26)
+    private let bell = IconButton(symbol: "bell", size: 12, tooltip: tr("收件箱 ⌘I", "Inbox ⌘I"), side: 26)
     private let bellBadge = BellBadge()
     private lazy var inbox = InboxPopover(store: store)
     private let switcher = WorkspaceSwitcher()
@@ -89,7 +89,7 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
         slider.addSubview(scroll)
         addSubview(slider)
 
-        for (b, title, sym, sel) in [(addButton, "添加项目", "plus", #selector(addProject))] {
+        for (b, title, sym, sel) in [(addButton, tr("添加项目", "Add Project"), "plus", #selector(addProject))] {
             b.isBordered = false
             b.font = Theme.smallFont
             b.contentTintColor = Theme.faint
@@ -104,9 +104,9 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
         addMore.onClick = { [weak self] in
             guard let self else { return }
             let m = NSMenu()
-            m.addItem(ActionItem("新建项目…") { [weak self] in self?.store.promptNewProject() })
-            m.addItem(ActionItem("选择文件夹…") { [weak self] in self?.store.pickProject() })
-            m.addItem(ActionItem("从 Agent 使用过的项目导入…") { [weak self] in self?.store.showImport() })
+            m.addItem(ActionItem(tr("新建项目…", "New Project…")) { [weak self] in self?.store.promptNewProject() })
+            m.addItem(ActionItem(tr("选择文件夹…", "Choose Folder…")) { [weak self] in self?.store.pickProject() })
+            m.addItem(ActionItem(tr("从 Agent 使用过的项目导入…", "Import Projects Your Agents Used…")) { [weak self] in self?.store.showImport() })
             m.popUp(positioning: nil, at: NSPoint(x: 0, y: self.addMore.bounds.height + 2), in: self.addMore)
         }
         footer.addSubview(addMore)
@@ -268,7 +268,7 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
             v.configure(title: store.title(of: s), kind: s.kind, status: store.status(of: s.id), time: RelativeTime.short(s.lastActivity),
                         pinned: store.isPinned(s.id), selected: selected, open: pane != nil || elsewhere)
             v.toolTip = "\(s.kind.displayName) · \(RelativeTime.full(s.lastActivity))"
-                + (elsewhere ? "\n打开在「\(store.workspaceContaining(s.id)!.name)」里，点击会移到这里" : "\n⌘/⇧+点击：向右分屏打开")
+                + (elsewhere ? tr("\n打开在「\(store.workspaceContaining(s.id)!.name)」里，点击会移到这里", "\nOpen in “\(store.workspaceContaining(s.id)!.name)”; click to move it here") : tr("\n⌘/⇧+点击：向右分屏打开", "\n⌘/⇧-click: open in a split"))
             return v
         }
     }
@@ -515,7 +515,7 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
         let review = items.filter { $0.group == .review }.count
         bellBadge.state = needs > 0 ? .count(needs) : (review > 0 ? .dot : .none)
         bell.contentTintColor = needs + review > 0 ? Theme.text : Theme.muted
-        bell.toolTip = needs > 0 ? "\(needs) 个会话需要你 · ⌘I" : (review > 0 ? "\(review) 个待查看 · ⌘I" : "收件箱 ⌘I")
+        bell.toolTip = needs > 0 ? tr("\(needs) 个会话需要你 · ⌘I", "\(plural(needs, "session")) \(needs == 1 ? "needs" : "need") you · ⌘I") : (review > 0 ? tr("\(review) 个待查看 · ⌘I", "\(review) to review · ⌘I") : tr("收件箱 ⌘I", "Inbox ⌘I"))
     }
 
     /// Two-finger horizontal swipe over the list switches workspaces (Arc's gesture).
@@ -680,7 +680,7 @@ final class WorkspaceSwitcher: NSView {
     private var buttons: [WorkspaceButton] = []
     private var grab: CGFloat = 0
     private let name = NSTextField.label(font: Theme.smallFont, color: Theme.muted)
-    private let add = IconButton(symbol: "plus", tooltip: "新建 Workspace", side: 26)
+    private let add = IconButton(symbol: "plus", tooltip: tr("新建 Workspace", "New Workspace"), side: 26)
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -898,7 +898,7 @@ final class ProjectCell: HoverCell, DisclosureCell {
     let chevron = ChevronView()
     let chip = ChipView()
     let name = NSTextField.label(font: NSFont.systemFont(ofSize: 12.5, weight: .semibold))
-    let plus = IconButton(symbol: "plus", tooltip: "新建", side: 24)
+    let plus = IconButton(symbol: "plus", tooltip: tr("新建", "New"), side: 24)
     private var dots: [DotView] = []
 
     init() {
@@ -934,7 +934,7 @@ final class ProjectCell: HoverCell, DisclosureCell {
 final class WorktreeCell: HoverCell, DisclosureCell {
     let chevron = ChevronView()
     let name = NSTextField.label(font: NSFont.systemFont(ofSize: 11), color: Theme.faint)
-    let plus = IconButton(symbol: "plus", size: 10, tooltip: "在这个 Worktree 新建 Session", side: 22)
+    let plus = IconButton(symbol: "plus", size: 10, tooltip: tr("在这个 Worktree 新建 Session", "New session in this worktree"), side: 22)
 
     init() {
         super.init(frame: .zero)
@@ -972,7 +972,7 @@ final class MoreCell: HoverCell {
     }
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(total: Int) { label.stringValue = "显示全部 \(total) 个…"; toolTip = "搜索这个 Worktree 下的所有 Session" }
+    func configure(total: Int) { label.stringValue = tr("显示全部 \(total) 个…", "Show all \(total)…"); toolTip = tr("搜索这个 Worktree 下的所有 Session", "Search all sessions in this worktree") }
 
     override func hoverChanged() {
         label.textColor = hovered ? Theme.text : Theme.faint
@@ -1015,15 +1015,15 @@ final class SessionCell: HoverCell {
         title.font = NSFont.systemFont(ofSize: Theme.uiFont.pointSize, weight: loud ? .semibold : .regular)
         switch status {
         case .waiting:
-            time.stringValue = "等待确认"
+            time.stringValue = tr("等待确认", "Needs approval")
             time.font = NSFont.systemFont(ofSize: 10.5, weight: .semibold)
             time.textColor = Theme.wait
         case .failed:
-            time.stringValue = "出错了"
+            time.stringValue = tr("出错了", "Failed")
             time.font = NSFont.systemFont(ofSize: 10.5, weight: .semibold)
             time.textColor = Theme.danger
         case .done:
-            time.stringValue = "完成 · " + when
+            time.stringValue = tr("完成 · ", "Done · ") + when
             time.font = NSFont.systemFont(ofSize: 10.5)
             time.textColor = selected ? Theme.selFG : Theme.accent
         default:

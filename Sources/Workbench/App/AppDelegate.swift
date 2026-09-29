@@ -48,7 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                 let wts = store.visibleProjects.prefix(3).compactMap { store.worktrees(of: $0).first }
                 for (i, wt) in wts.enumerated() { store.newSession(.shell, in: wt, newPane: i > 0) }
                 if let first = wts.first { store.focusPane(number: 1); store.newSession(.shell, in: first) }
-                if store.workspaces.count == 1 { let cur = store.activeID; store.addWorkspace(name: "个人"); store.switchWorkspace(to: cur) }
+                if store.workspaces.count == 1 { let cur = store.activeID; store.addWorkspace(name: tr("个人", "Personal")); store.switchWorkspace(to: cur) }
                 if let q = ProcessInfo.processInfo.environment["WORKBENCH_DEMO_PICKER"] {
                     store.showPalette()
                     func find(_ v: NSView) -> CommandPalette? { (v as? CommandPalette) ?? v.subviews.lazy.compactMap(find).first }
@@ -142,9 +142,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func toggleAutoCheck(_ sender: Any?) { Updater.shared.automaticallyChecks.toggle() }
     @objc func toggleAutoInstall(_ sender: Any?) { Updater.shared.automaticallyDownloads.toggle() }
 
+    /// Language menu: saved right away, applied on the next launch (offers to restart now).
+    @objc func setLanguage(_ sender: NSMenuItem) {
+        let lang = AppLanguage.allCases[sender.tag]
+        guard lang != L10n.choice else { return }
+        L10n.set(lang)
+        guard L10n.resolves(lang) != L10n.isChinese else { return }   // same language as now: nothing to restart for
+        let a = NSAlert()
+        a.messageText = tr("重启 Seperate 以切换语言？", "Restart Seperate to switch the language?")
+        a.informativeText = tr("正在运行的终端会被结束；Codex / Claude 会话之后可以从侧栏恢复。也可以稍后自己重启。",
+                               "Running terminals will be stopped; Codex / Claude sessions can be reopened from the sidebar. You can also restart later yourself.")
+        a.addButton(withTitle: tr("现在重启", "Restart Now"))
+        a.addButton(withTitle: tr("稍后", "Later"))
+        guard a.runModal() == .alertFirstButtonReturn else { return }
+        // Reopen once this process has exited; give up after 30 s if quitting was cancelled.
+        let relaunch = Process()
+        relaunch.executableURL = URL(fileURLWithPath: "/bin/sh")
+        relaunch.arguments = ["-c", "for i in $(seq 150); do kill -0 $1 2>/dev/null || { open \"$0\"; exit 0; }; sleep 0.2; done",
+                              Bundle.main.bundlePath, "\(ProcessInfo.processInfo.processIdentifier)"]
+        try? relaunch.run()
+        NSApp.terminate(nil)
+    }
+
     func validateMenuItem(_ item: NSMenuItem) -> Bool {
         let u = Updater.shared
         switch item.action {
+        case #selector(setLanguage(_:)):
+            item.state = AppLanguage.allCases[item.tag] == L10n.choice ? .on : .off
         case #selector(checkForUpdates(_:)):
             return u.canCheckForUpdates
         case #selector(toggleAutoCheck(_:)):
@@ -155,6 +179,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         default: break
         }
         return true
+    }
+
+    private func languageMenu() -> NSMenuItem {
+        let m = NSMenu()
+        for (i, lang) in AppLanguage.allCases.enumerated() {
+            let it = NSMenuItem(title: lang.title, action: #selector(setLanguage(_:)), keyEquivalent: "")
+            it.tag = i
+            m.addItem(it)
+            if lang == .system { m.addItem(.separator()) }
+        }
+        let host = NSMenuItem(title: tr("语言", "Language"), action: nil, keyEquivalent: "")
+        host.submenu = m
+        return host
     }
 
     private func makeMenu() -> NSMenu {
@@ -174,56 +211,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         }
 
         sub("Seperate", [
-            item("关于 Seperate", #selector(NSApplication.orderFrontStandardAboutPanel(_:)), ""),
-            item("检查更新…", #selector(checkForUpdates(_:)), ""),
-            item("启动时检查更新", #selector(toggleAutoCheck(_:)), ""),
-            item("自动下载并安装更新", #selector(toggleAutoInstall(_:)), ""),
+            item(tr("关于 Seperate", "About Seperate"), #selector(NSApplication.orderFrontStandardAboutPanel(_:)), ""),
+            item(tr("检查更新…", "Check for Updates…"), #selector(checkForUpdates(_:)), ""),
+            item(tr("启动时检查更新", "Check for Updates at Launch"), #selector(toggleAutoCheck(_:)), ""),
+            item(tr("自动下载并安装更新", "Automatically Download and Install Updates"), #selector(toggleAutoInstall(_:)), ""),
             .separator(),
-            item("隐藏 Seperate", #selector(NSApplication.hide(_:)), "h"),
-            item("退出 Seperate", #selector(NSApplication.terminate(_:)), "q"),
+            languageMenu(),
+            .separator(),
+            item(tr("隐藏 Seperate", "Hide Seperate"), #selector(NSApplication.hide(_:)), "h"),
+            item(tr("退出 Seperate", "Quit Seperate"), #selector(NSApplication.terminate(_:)), "q"),
         ])
-        sub("文件", [
-            item("命令面板", #selector(showPalette(_:)), "k"),
-            item("命令面板", #selector(showPalette(_:)), "p"),
+        sub(tr("文件", "File"), [
+            item(tr("命令面板", "Command Palette"), #selector(showPalette(_:)), "k"),
+            item(tr("命令面板", "Command Palette"), #selector(showPalette(_:)), "p"),
             .separator(),
-            item("新建终端 Tab", #selector(newShell(_:)), "t"),
-            item("新建项目…", #selector(newProject(_:)), "n"),
-            item("添加项目…", #selector(addProject(_:)), "o"),
-            item("用默认编辑器打开 Worktree", #selector(openInEditor(_:)), "o", [.command, .option]),
-            item("收件箱", #selector(toggleInbox(_:)), "i"),
-            item("重新扫描会话", #selector(refreshSessions(_:)), "r", [.command, .shift]),
+            item(tr("新建终端 Tab", "New Terminal Tab"), #selector(newShell(_:)), "t"),
+            item(tr("新建项目…", "New Project…"), #selector(newProject(_:)), "n"),
+            item(tr("添加项目…", "Add Project…"), #selector(addProject(_:)), "o"),
+            item(tr("用默认编辑器打开 Worktree", "Open Worktree in Default Editor"), #selector(openInEditor(_:)), "o", [.command, .option]),
+            item(tr("收件箱", "Inbox"), #selector(toggleInbox(_:)), "i"),
+            item(tr("重新扫描会话", "Rescan Sessions"), #selector(refreshSessions(_:)), "r", [.command, .shift]),
             .separator(),
-            item("关闭 Tab", #selector(closeTab(_:)), "w"),
+            item(tr("关闭 Tab", "Close Tab"), #selector(closeTab(_:)), "w"),
         ])
-        sub("编辑", [
-            item("复制", #selector(TerminalView.copy(_:)), "c"),
-            item("粘贴", #selector(TerminalView.paste(_:)), "v"),
-            item("全选", #selector(NSResponder.selectAll(_:)), "a"),
+        sub(tr("编辑", "Edit"), [
+            item(tr("复制", "Copy"), #selector(TerminalView.copy(_:)), "c"),
+            item(tr("粘贴", "Paste"), #selector(TerminalView.paste(_:)), "v"),
+            item(tr("全选", "Select All"), #selector(NSResponder.selectAll(_:)), "a"),
         ])
         var layoutItems = [
-            item("切换侧栏", #selector(toggleSidebar(_:)), "b"),
+            item(tr("切换侧栏", "Toggle Sidebar"), #selector(toggleSidebar(_:)), "b"),
             .separator(),
-            item("向右分屏", #selector(splitRight(_:)), "d"),
-            item("向下分屏", #selector(splitDown(_:)), "d", [.command, .shift]),
+            item(tr("向右分屏", "Split Right"), #selector(splitRight(_:)), "d"),
+            item(tr("向下分屏", "Split Down"), #selector(splitDown(_:)), "d", [.command, .shift]),
             .separator(),
         ]
         for (i, p) in LayoutPreset.allCases.enumerated() {
-            layoutItems.append(item(p == .grid ? "2×2 布局" : "\(p.paneCount) 栏布局", #selector(applyPreset(_:)), "\(i + 1)", [.command, .control], tag: i))
+            layoutItems.append(item(p == .grid ? tr("2×2 布局", "2×2 Grid") : tr("\(p.paneCount) 栏布局", "\(p.paneCount)-Pane Layout"), #selector(applyPreset(_:)), "\(i + 1)", [.command, .control], tag: i))
         }
         layoutItems.append(.separator())
-        for n in 1...9 { layoutItems.append(item("聚焦第 \(n) 栏", #selector(focusPaneN(_:)), "\(n)", tag: n)) }
-        sub("布局", layoutItems)
+        for n in 1...9 { layoutItems.append(item(tr("聚焦第 \(n) 栏", "Focus Pane \(n)"), #selector(focusPaneN(_:)), "\(n)", tag: n)) }
+        sub(tr("布局", "Layout"), layoutItems)
         var wsItems = [
-            item("新建 Workspace…", #selector(newWorkspace(_:)), "n", [.command, .shift]),
-            item("下一个 Workspace", #selector(nextWorkspace(_:)), "]", [.control]),
-            item("上一个 Workspace", #selector(previousWorkspace(_:)), "[", [.control]),
+            item(tr("新建 Workspace…", "New Workspace…"), #selector(newWorkspace(_:)), "n", [.command, .shift]),
+            item(tr("下一个 Workspace", "Next Workspace"), #selector(nextWorkspace(_:)), "]", [.control]),
+            item(tr("上一个 Workspace", "Previous Workspace"), #selector(previousWorkspace(_:)), "[", [.control]),
             .separator(),
         ]
-        for n in 1...9 { wsItems.append(item("切换到第 \(n) 个 Workspace", #selector(switchWorkspaceN(_:)), "\(n)", [.control], tag: n)) }
+        for n in 1...9 { wsItems.append(item(tr("切换到第 \(n) 个 Workspace", "Switch to Workspace \(n)"), #selector(switchWorkspaceN(_:)), "\(n)", [.control], tag: n)) }
         sub("Workspace", wsItems)
-        let window = NSMenu(title: "窗口")
-        window.addItem(item("最小化", #selector(NSWindow.performMiniaturize(_:)), "m"))
-        let wi = NSMenuItem(title: "窗口", action: nil, keyEquivalent: ""); wi.submenu = window
+        let window = NSMenu(title: tr("窗口", "Window"))
+        window.addItem(item(tr("最小化", "Minimize"), #selector(NSWindow.performMiniaturize(_:)), "m"))
+        let wi = NSMenuItem(title: tr("窗口", "Window"), action: nil, keyEquivalent: ""); wi.submenu = window
         bar.addItem(wi)
         NSApp.windowsMenu = window
         return bar

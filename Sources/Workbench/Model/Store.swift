@@ -66,7 +66,7 @@ final class Store {
     init() {
         AgentHooks.install()
         load()
-        if workspaces.isEmpty { workspaces = [Workspace.make(name: "默认")]; activeID = workspaces[0].id; saveNow() }
+        if workspaces.isEmpty { workspaces = [Workspace.make(name: tr("默认", "Default"))]; activeID = workspaces[0].id; saveNow() }
         if !workspaces.contains(where: { $0.id == activeID }) { activeID = workspaces[0].id }
         let (ps, ws) = Self.resolveProjects(roots: allRoots, aliases: aliases, order: worktreeOrder, hidden: Set(hiddenWorktrees.keys))
         projects = ps; worktrees = ws
@@ -215,7 +215,7 @@ final class Store {
     func phaseMessage(of id: String) -> String? {
         switch phase[id] {
         case .needsInput(let m), .done(let m): return m
-        case .failed(let code): return "退出码 \(code)"
+        case .failed(let code): return tr("退出码 \(code)", "Exit code \(code)")
         default: return nil
         }
     }
@@ -359,10 +359,10 @@ final class Store {
         let busy = ids.filter { terminals[$0]?.needsConfirmClose == true }
         if !busy.isEmpty {
             let a = NSAlert()
-            a.messageText = "关闭 \(ids.count) 个 Tab？"
-            a.informativeText = "其中 \(busy.count) 个还有进程在运行，会一起结束。Codex / Claude 会话之后可以从侧栏恢复。"
-            a.addButton(withTitle: "关闭")
-            a.addButton(withTitle: "取消")
+            a.messageText = tr("关闭 \(ids.count) 个 Tab？", "Close \(ids.count) tabs?")
+            a.informativeText = tr("其中 \(busy.count) 个还有进程在运行，会一起结束。Codex / Claude 会话之后可以从侧栏恢复。", "Processes are still running in \(busy.count) of them and will be stopped. Codex / Claude sessions can be reopened from the sidebar later.")
+            a.addButton(withTitle: tr("关闭", "Close"))
+            a.addButton(withTitle: tr("取消", "Cancel"))
             guard a.runModal() == .alertFirstButtonReturn else { return }
         }
         for id in ids {
@@ -373,10 +373,10 @@ final class Store {
     private func confirmEnd(_ id: String, processAlive: Bool) {
         if processAlive, let s = session(id) {
             let a = NSAlert()
-            a.messageText = "结束「\(title(of: s))」？"
-            a.informativeText = s.kind == .shell ? "终端里还有进程在运行。" : "\(s.kind.displayName) 还在运行。结束后可以在侧栏重新打开，继续这个会话。"
-            a.addButton(withTitle: "结束")
-            a.addButton(withTitle: "取消")
+            a.messageText = tr("结束「\(title(of: s))」？", "End “\(title(of: s))”?")
+            a.informativeText = s.kind == .shell ? tr("终端里还有进程在运行。", "A process is still running in this terminal.") : tr("\(s.kind.displayName) 还在运行。结束后可以在侧栏重新打开，继续这个会话。", "\(s.kind.displayName) is still running. You can reopen it from the sidebar later and pick up this session.")
+            a.addButton(withTitle: tr("结束", "End"))
+            a.addButton(withTitle: tr("取消", "Cancel"))
             guard a.runModal() == .alertFirstButtonReturn else { return }
         }
         endSession(id)
@@ -546,13 +546,13 @@ final class Store {
             switch new {
             case .needsInput(let m):
                 Self.log.info("notify needs-input session=\(id, privacy: .public)")
-                notifier.post(session: id, title: who, subtitle: "需要你确认", body: m ?? title(of: s), sound: true)
+                notifier.post(session: id, title: who, subtitle: tr("需要你确认", "Needs your approval"), body: m ?? title(of: s), sound: true)
             case .failed(let code):
-                notifier.post(session: id, title: who, subtitle: "出错了 · 退出码 \(code)", body: title(of: s), sound: true)
+                notifier.post(session: id, title: who, subtitle: tr("出错了 · 退出码 \(code)", "Failed · exit code \(code)"), body: title(of: s), sound: true)
             case .done(let m):
                 // Quick answers do not need a notification; long turns do.
                 if let start = turnStarted[id], Date().timeIntervalSince(start) >= Self.notifyDoneAfter {
-                    notifier.post(session: id, title: who, subtitle: "完成 · 用时 \(Self.duration(Date().timeIntervalSince(start)))",
+                    notifier.post(session: id, title: who, subtitle: tr("完成 · 用时 \(Self.duration(Date().timeIntervalSince(start)))", "Done · took \(Self.duration(Date().timeIntervalSince(start)))"),
                                   body: m ?? title(of: s), sound: true)
                 }
             default: break
@@ -585,24 +585,24 @@ final class Store {
             guard let s = session(id) else { continue }
             let wsName = workspaceContaining(id).flatMap { $0.id == activeID ? nil : $0.name }
             let place = (worktree(for: s).map { projectName(of: $0) + ($0.isMain ? "" : " / " + $0.alias) } ?? s.cwd.abbreviatingHome)
-                + (wsName.map { " · 在「\($0)」" } ?? "")
+                + (wsName.map { tr(" · 在「\($0)」", " · in “\($0)”") } ?? "")
             let since = phaseSince[id] ?? s.lastActivity
             func item(_ label: InboxItem.Label, _ group: InboxItem.Group, _ message: String) -> InboxItem {
                 InboxItem(id: id, agent: s.kind, title: title(of: s), place: place, message: message, label: label, group: group, since: since)
             }
-            if attention.contains(id) { out.append(item(.bell, .needs, "终端响铃了")); continue }
+            if attention.contains(id) { out.append(item(.bell, .needs, tr("终端响铃了", "The terminal rang"))); continue }
             switch phase[id] {
             case .needsInput(let m):
                 let label: InboxItem.Label = [.question: .question, .plan: .plan][needKind[id] ?? .permission] ?? .permission
-                out.append(item(label, .needs, m ?? "等你处理"))
+                out.append(item(label, .needs, m ?? tr("等你处理", "Waiting for you")))
             case .done(let m):
                 // A turn that ends by asking something is waiting for an answer.
-                let text = (m ?? "完成").trimmingCharacters(in: .whitespacesAndNewlines)
+                let text = (m ?? tr("完成", "Done")).trimmingCharacters(in: .whitespacesAndNewlines)
                 let asks = text.hasSuffix("?") || text.hasSuffix("？")
-                let took = turnStarted[id].map { " · 用时 " + Self.duration(since.timeIntervalSince($0)) } ?? ""
+                let took = turnStarted[id].map { tr(" · 用时 ", " · took ") + Self.duration(since.timeIntervalSince($0)) } ?? ""
                 out.append(asks ? item(.question, .needs, text) : item(.done, .review, text + took))
-            case .failed(let code): out.append(item(.failed, .review, "退出码 \(code)"))
-            case .working: out.append(item(.working, .working, "正在运行 · 已 " + Self.duration(Date().timeIntervalSince(since))))
+            case .failed(let code): out.append(item(.failed, .review, tr("退出码 \(code)", "Exit code \(code)")))
+            case .working: out.append(item(.working, .working, tr("正在运行 · 已 ", "Running · for ") + Self.duration(Date().timeIntervalSince(since))))
             case nil: break
             }
         }
@@ -630,7 +630,7 @@ final class Store {
 
     static func duration(_ t: TimeInterval) -> String {
         let s = Int(t)
-        return s >= 60 ? "\(s / 60)分\(s % 60)秒" : "\(s)秒"
+        return s >= 60 ? tr("\(s / 60)分\(s % 60)秒", "\(s / 60)m \(s % 60)s") : tr("\(s)秒", "\(s)s")
     }
 
     /// Jump to a session waiting in another workspace.
@@ -683,10 +683,10 @@ final class Store {
         let live = pane.tabs.filter { terminals[$0] != nil }
         if !live.isEmpty {
             let a = NSAlert()
-            a.messageText = "关闭这一栏？"
-            a.informativeText = "这一栏里有 \(live.count) 个 Session 在运行，会一起结束。Codex / Claude 会话之后可以从侧栏恢复。"
-            a.addButton(withTitle: "关闭")
-            a.addButton(withTitle: "取消")
+            a.messageText = tr("关闭这一栏？", "Close this pane?")
+            a.informativeText = tr("这一栏里有 \(live.count) 个 Session 在运行，会一起结束。Codex / Claude 会话之后可以从侧栏恢复。", "\(live.count) sessions are running in this pane and will be stopped. Codex / Claude sessions can be reopened from the sidebar later.")
+            a.addButton(withTitle: tr("关闭", "Close"))
+            a.addButton(withTitle: tr("取消", "Cancel"))
             guard a.runModal() == .alertFirstButtonReturn else { return }
         }
         live.forEach(endSession)
@@ -809,11 +809,11 @@ final class Store {
     func promptRemoveProject(_ p: Project) {
         let running = openSessions(of: p).filter { terminals[$0] != nil }.count
         let a = NSAlert()
-        a.messageText = "从 Seperate 移除「\(p.name)」？"
-        a.informativeText = "只是不再在 Seperate 里显示：文件夹、Git 仓库和 Codex / Claude 的会话记录都不会被删除，之后重新添加这个文件夹就能恢复。"
-            + (running > 0 ? "\n\n它有 \(running) 个 Session 正在运行，会一起结束。" : "")
-        a.addButton(withTitle: "移除")
-        a.addButton(withTitle: "取消")
+        a.messageText = tr("从 Seperate 移除「\(p.name)」？", "Remove “\(p.name)” from Seperate?")
+        a.informativeText = tr("只是不再在 Seperate 里显示：文件夹、Git 仓库和 Codex / Claude 的会话记录都不会被删除，之后重新添加这个文件夹就能恢复。", "It just stops showing in Seperate: the folder, the Git repository and the Codex / Claude session history are not deleted. Add the folder again to bring it back.")
+            + (running > 0 ? tr("\n\n它有 \(running) 个 Session 正在运行，会一起结束。", "\n\n\(running) of its sessions are running and will be stopped.") : "")
+        a.addButton(withTitle: tr("移除", "Remove"))
+        a.addButton(withTitle: tr("取消", "Cancel"))
         if running > 0 { a.buttons[0].hasDestructiveAction = true }
         if a.runModal() == .alertFirstButtonReturn { removeProject(p) }
     }
@@ -923,8 +923,8 @@ final class Store {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = true
-        panel.prompt = "添加"
-        panel.message = "选择项目文件夹，加入「\(active.name)」（Git 仓库会自动识别它的所有 Worktree）"
+        panel.prompt = tr("添加", "Add")
+        panel.message = tr("选择项目文件夹，加入「\(active.name)」（Git 仓库会自动识别它的所有 Worktree）", "Choose a project folder to add to “\(active.name)” (all worktrees of a Git repository are found automatically)")
         guard panel.runModal() == .OK else { return }
         for url in panel.urls { addProject(path: url.path) }
     }
@@ -938,7 +938,7 @@ final class Store {
         field.frame = NSRect(x: 0, y: 0, width: 260, height: 24)
         a.accessoryView = field
         a.addButton(withTitle: button)
-        a.addButton(withTitle: "取消")
+        a.addButton(withTitle: tr("取消", "Cancel"))
         a.window.initialFirstResponder = field
         guard a.runModal() == .alertFirstButtonReturn else { return nil }
         let v = field.stringValue.trimmingCharacters(in: .whitespaces)
@@ -946,7 +946,7 @@ final class Store {
     }
 
     func promptRename(_ wt: Worktree) {
-        if let v = promptText(title: "重命名 Worktree", message: wt.path.abbreviatingHome, initial: wt.alias, button: "保存") { rename(wt, to: v) }
+        if let v = promptText(title: tr("重命名 Worktree", "Rename Worktree"), message: wt.path.abbreviatingHome, initial: wt.alias, button: tr("保存", "Save")) { rename(wt, to: v) }
     }
 
     func promptNewWorktree(in p: Project) {
@@ -960,22 +960,22 @@ final class Store {
     }
 
     func promptNewWorkspace() {
-        if let name = promptText(title: "新建 Workspace", message: "一组项目和它们的分栏布局，比如「公司」「个人」。", placeholder: "公司", button: "创建") {
+        if let name = promptText(title: tr("新建 Workspace", "New Workspace"), message: tr("一组项目和它们的分栏布局，比如「公司」「个人」。", "A set of projects and their pane layout, like “Work” or “Personal”."), placeholder: tr("公司", "Work"), button: tr("创建", "Create")) {
             addWorkspace(name: name)
         }
     }
 
     func promptRenameWorkspace(_ w: Workspace) {
-        if let v = promptText(title: "重命名 Workspace", message: "", initial: w.name, button: "保存") { renameWorkspace(w.id, to: v) }
+        if let v = promptText(title: tr("重命名 Workspace", "Rename Workspace"), message: "", initial: w.name, button: tr("保存", "Save")) { renameWorkspace(w.id, to: v) }
     }
 
     func promptDeleteWorkspace(_ w: Workspace) {
         let live = w.layout.openSessionIDs.filter { terminals[$0] != nil }.count
         let a = NSAlert()
-        a.messageText = "删除「\(w.name)」？"
-        a.informativeText = "项目和会话记录都会保留。" + (live > 0 ? "这个 Workspace 里有 \(live) 个 Session 在运行，会一起结束。" : "")
-        a.addButton(withTitle: "删除")
-        a.addButton(withTitle: "取消")
+        a.messageText = tr("删除「\(w.name)」？", "Delete “\(w.name)”?")
+        a.informativeText = tr("项目和会话记录都会保留。", "Projects and session history are kept.") + (live > 0 ? tr("这个 Workspace 里有 \(live) 个 Session 在运行，会一起结束。", " \(live) sessions in this workspace are running and will be stopped.") : "")
+        a.addButton(withTitle: tr("删除", "Delete"))
+        a.addButton(withTitle: tr("取消", "Cancel"))
         if a.runModal() == .alertFirstButtonReturn { deleteWorkspace(w.id) }
     }
 
@@ -1019,7 +1019,7 @@ final class Store {
             let rank = Dictionary((order[root] ?? []).enumerated().map { ($1, $0) }, uniquingKeysWith: { a, _ in a })
             entries = entries.enumerated().sorted { (rank[$0.element.0] ?? Int.max, $0.offset) < (rank[$1.element.0] ?? Int.max, $1.offset) }.map(\.element)
             for (path, isMain) in entries where isMain || !hidden.contains(path) {
-                let alias = aliases[path] ?? (isMain ? "主目录" : (path as NSString).lastPathComponent)
+                let alias = aliases[path] ?? (isMain ? tr("主目录", "Main") : (path as NSString).lastPathComponent)
                 ws.append(Worktree(projectID: root, path: path, alias: alias, isMain: isMain))
             }
         }
@@ -1133,7 +1133,7 @@ final class Store {
             aliases = s.aliases; showOlder = s.showOlder; sidebarHidden = s.sidebarHidden
             created = s.created
         } else if let v1 = try? JSONDecoder().decode(SavedV1.self, from: data) {
-            let w = Workspace.make(name: "默认", projectRoots: v1.projectRoots, layout: v1.layout)
+            let w = Workspace.make(name: tr("默认", "Default"), projectRoots: v1.projectRoots, layout: v1.layout)
             workspaces = [w]; activeID = w.id
             aliases = v1.aliases; showOlder = v1.showOlder; sidebarHidden = v1.sidebarHidden ?? false
             created = v1.created

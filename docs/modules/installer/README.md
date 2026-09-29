@@ -1,7 +1,7 @@
 # 安装器(SeperateInstaller)
 
 ## 职责
-DMG 里那个双击安装的「安装 Seperate.app」:把随包携带的 `Seperate.app` 装进 `/Applications`(不可写时退到 `~/Applications`),必要时先让正在运行的 Seperate 退出,装完可顺手推出安装盘。
+DMG 里那个双击安装的「Install Seperate.app」(中文系统在 Finder 里显示为「安装 Seperate」):把随包携带的 `Seperate.app` 装进 `/Applications`(不可写时退到 `~/Applications`),必要时先让正在运行的 Seperate 退出,装完可顺手推出安装盘。
 只管**首次安装 / 手动覆盖安装**;装好之后的版本升级走应用内 Sparkle,不经过这里。打包、签名、DMG 布局见 [构建与发布](../release/README.md)。
 
 ## 文件清单与关系
@@ -9,7 +9,7 @@ DMG 里那个双击安装的「安装 Seperate.app」:把随包携带的 `Sepera
 - `Sources/SeperateInstaller/Installation.swift` — 安装动作本身(选目标目录、暂存复制、去 quarantine、原子替换),不含 UI。
 - `Sources/SeperateInstaller/InstallerWindow.swift` — `InstallerController`:单窗口状态机 + 进度条 + 退出运行中的 app + 推出 DMG + 设计截图。
 - 调用关系:`main.swift → InstallerController → Installation.run()`;`--install-to` 时 `main.swift → Installation.run()` 直接执行。
-- 打包方:`scripts/build-installer.sh` 把 `build/Seperate.app` 塞进 `build/安装 Seperate.app/Contents/Resources/`,由 `scripts/package-dmg.sh` 调用。
+- 打包方:`scripts/build-installer.sh` 把 `build/Seperate.app` 塞进 `build/Install Seperate.app/Contents/Resources/`,由 `scripts/package-dmg.sh` 调用。
 
 ## 数据流
 1. 载荷:默认 `Bundle.main.resourceURL/Seperate.app`,或 `--payload <APP>` 指定。
@@ -32,5 +32,5 @@ DMG 里那个双击安装的「安装 Seperate.app」:把随包携带的 `Sepera
 - 直接 `swift run SeperateInstaller` 时 bundle 里没有载荷,必须带 `--payload build/Seperate.app`。
 - **不要在开发机上对真实 `/Applications` 跑安装器**:它会让正在运行的 Seperate 退出(用户在里面跑着 agent)。验证用 `--install-to <临时目录>` 或 `--snapshot`。
 - `main.swift` 注释说 `--install-to` 供 CI 和测试使用,但目前 `ci.yml` 与 `Tests/` 都没有调用它。
-- UI 文案为中文,配色硬编码为 app 的 Bone 主题(`InstallerController.C`),改主题时两边要一起改。
+- UI 文案中英双语,跟随系统语言(`main.swift` 里的 `tr`);配色硬编码为 app 的 Bone 主题(`InstallerController.C`),改主题时两边要一起改。
 - 安装器图标与 DMG 背景由 `scripts/make-installer-assets.swift` 生成到 `Resources/Installer/`。

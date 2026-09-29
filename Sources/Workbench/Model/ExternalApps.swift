@@ -19,7 +19,7 @@ enum ExternalApp: String, CaseIterable {
         case .xcode: "Xcode"
         case .ghostty: "Ghostty"
         case .iterm: "iTerm"
-        case .terminal: "终端"
+        case .terminal: tr("终端", "Terminal")
         }
     }
 

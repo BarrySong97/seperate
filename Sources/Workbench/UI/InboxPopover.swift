@@ -65,14 +65,14 @@ private final class InboxView: NSView {
     var onResize: ((NSSize) -> Void)?
     private let store: Store
     private var filter = 0            // 0 all, 1 needs, 2 review, 3 working
-    private let title = NSTextField.label("收件箱", font: NSFont.systemFont(ofSize: 14, weight: .semibold))
+    private let title = NSTextField.label(tr("收件箱", "Inbox"), font: NSFont.systemFont(ofSize: 14, weight: .semibold))
     private let summary = NSTextField.label(font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
-    private let readAll = NSButton(title: "全部标为已读", target: nil, action: nil)
+    private let readAll = NSButton(title: tr("全部标为已读", "Mark All as Read"), target: nil, action: nil)
     private let tabs = NSSegmentedControl()
     private let scroll = NSScrollView()
     private let list = InboxFlipped()
     private let empty = NSTextField.label(font: NSFont.systemFont(ofSize: 12.5), color: Theme.faint)
-    private let footer = NSTextField.label("点一行 = 跳到那个会话并标为已读　·　⌘I 打开 / 关闭", font: NSFont.systemFont(ofSize: 11), color: Theme.faint)
+    private let footer = NSTextField.label(tr("点一行 = 跳到那个会话并标为已读　·　⌘I 打开 / 关闭", "Click a row to jump to that session and mark it read  ·  ⌘I open / close"), font: NSFont.systemFont(ofSize: 11), color: Theme.faint)
     static let width: CGFloat = 440
 
     init(store: Store) {
@@ -102,9 +102,9 @@ private final class InboxView: NSView {
     func reload() {
         let all = store.inboxItems()
         let needs = all.filter { $0.group == .needs }, review = all.filter { $0.group == .review }, working = all.filter { $0.group == .working }
-        summary.stringValue = needs.isEmpty ? (review.isEmpty ? "都处理完了" : "\(review.count) 个待查看")
-            : "\(needs.count) 个需要你" + (review.isEmpty ? "" : " · \(review.count) 个待查看")
-        for (i, (label, n)) in [("全部", needs.count + review.count), ("需要你", needs.count), ("待查看", review.count), ("进行中", working.count)].enumerated() {
+        summary.stringValue = needs.isEmpty ? (review.isEmpty ? tr("都处理完了", "All caught up") : tr("\(review.count) 个待查看", "\(review.count) to review"))
+            : tr("\(needs.count) 个需要你", "\(needs.count) waiting on you") + (review.isEmpty ? "" : tr(" · \(review.count) 个待查看", " · \(review.count) to review"))
+        for (i, (label, n)) in [(tr("全部", "All"), needs.count + review.count), (tr("需要你", "Needs you"), needs.count), (tr("待查看", "To review"), review.count), (tr("进行中", "Running"), working.count)].enumerated() {
             tabs.setLabel(n > 0 ? "\(label) \(n)" : label, forSegment: i)
             tabs.setWidth(0, forSegment: i)
         }
@@ -122,7 +122,7 @@ private final class InboxView: NSView {
         for item in shown {
             if filter == 0, item.group != lastGroup {
                 let n = shown.filter { $0.group == item.group }.count
-                let h = NSTextField.label(["需要你", "待你查看", "进行中"][item.group.rawValue] + " · \(n)",
+                let h = NSTextField.label([tr("需要你", "Needs you"), tr("待你查看", "To review"), tr("进行中", "Running")][item.group.rawValue] + " · \(n)",
                                           font: NSFont.systemFont(ofSize: 11, weight: .semibold),
                                           color: [Theme.wait, Theme.accent, Theme.run][item.group.rawValue])
                 h.frame = NSRect(x: 16, y: y + 8, width: Self.width - 32, height: 14)
@@ -139,7 +139,7 @@ private final class InboxView: NSView {
         let listH = min(max(y + 6, 90), 520)
         list.frame = NSRect(x: 0, y: 0, width: Self.width, height: max(y + 6, listH))
         empty.isHidden = !shown.isEmpty
-        empty.stringValue = working.isEmpty || filter != 0 ? "这里没有需要处理的会话" : "都处理完了 · \(working.count) 个会话还在运行"
+        empty.stringValue = working.isEmpty || filter != 0 ? tr("这里没有需要处理的会话", "Nothing needs you here") : tr("都处理完了 · \(working.count) 个会话还在运行", "All caught up · \(plural(working.count, "session")) still running")
         let total = 44 + 34 + listH + 32
         frame.size = NSSize(width: Self.width, height: total)
         needsLayout = true
@@ -185,13 +185,13 @@ private final class InboxRow: NSView {
 
     static func pillInfo(_ l: InboxItem.Label) -> (String, NSColor) {
         switch l {
-        case .permission: ("需要授权", Theme.wait)
-        case .question: ("等你回答", Theme.wait)
-        case .plan: ("确认计划", Theme.wait)
-        case .bell: ("终端响铃", Theme.wait)
-        case .done: ("待查看", Theme.accent)
-        case .failed: ("出错了", Theme.danger)
-        case .working: ("进行中", Theme.run)
+        case .permission: (tr("需要授权", "Needs approval"), Theme.wait)
+        case .question: (tr("等你回答", "Question"), Theme.wait)
+        case .plan: (tr("确认计划", "Review plan"), Theme.wait)
+        case .bell: (tr("终端响铃", "Terminal bell"), Theme.wait)
+        case .done: (tr("待查看", "To review"), Theme.accent)
+        case .failed: (tr("出错了", "Failed"), Theme.danger)
+        case .working: (tr("进行中", "Running"), Theme.run)
         }
     }
 

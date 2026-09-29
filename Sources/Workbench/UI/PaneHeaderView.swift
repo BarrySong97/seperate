@@ -16,21 +16,21 @@ final class PaneHeaderView: NSView, NSDraggingSource {
     private let strip = NSView()
     private var tabs: [String: TabView] = [:]
     private var order: [String] = []
-    private let splitRight = IconButton(symbol: "rectangle.split.2x1", tooltip: "向右分屏 ⌘D", side: 24)
-    private let splitDown = IconButton(symbol: "rectangle.split.1x2", tooltip: "向下分屏 ⌘⇧D", side: 24)
-    private let close = IconButton(symbol: "xmark", tooltip: "关闭这一栏", side: 24)
+    private let splitRight = IconButton(symbol: "rectangle.split.2x1", tooltip: tr("向右分屏 ⌘D", "Split Right ⌘D"), side: 24)
+    private let splitDown = IconButton(symbol: "rectangle.split.1x2", tooltip: tr("向下分屏 ⌘⇧D", "Split Down ⌘⇧D"), side: 24)
+    private let close = IconButton(symbol: "xmark", tooltip: tr("关闭这一栏", "Close this pane"), side: 24)
     private let originChip = ChipView()
     private let origin = NSTextField.label(font: Theme.smallFont, color: Theme.muted)
     private let originStatus = DotView(frame: .zero)
     private let originState = NSTextField.label(font: Theme.smallFont, color: Theme.faint)
     private let sid = NSTextField.label(font: Theme.monoFont, color: Theme.faint)
     // Worktree actions at the end of the origin line: Finder, default editor ▾, copy path, ···.
-    private let finderButton = IconButton(symbol: "folder", tooltip: "在 Finder 中显示", side: 26)
-    private let editorButton = IconButton(symbol: "chevron.left.forwardslash.chevron.right", tooltip: "用编辑器打开", side: 26)
-    private let editorMore = IconButton(symbol: "chevron.down", size: 7, tooltip: "用其他应用打开", side: 16)
+    private let finderButton = IconButton(symbol: "folder", tooltip: tr("在 Finder 中显示", "Show in Finder"), side: 26)
+    private let editorButton = IconButton(symbol: "chevron.left.forwardslash.chevron.right", tooltip: tr("用编辑器打开", "Open in editor"), side: 26)
+    private let editorMore = IconButton(symbol: "chevron.down", size: 7, tooltip: tr("用其他应用打开", "Open with another app"), side: 16)
     private let editorGroup = NSView()
-    private let copyButton = IconButton(symbol: "doc.on.doc", size: 11, tooltip: "复制路径", side: 26)
-    private let moreButton = IconButton(symbol: "ellipsis", size: 12, tooltip: "Worktree 操作", side: 26)
+    private let copyButton = IconButton(symbol: "doc.on.doc", size: 11, tooltip: tr("复制路径", "Copy path"), side: 26)
+    private let moreButton = IconButton(symbol: "ellipsis", size: 12, tooltip: tr("Worktree 操作", "Worktree actions"), side: 26)
     private var originWorktree: Worktree?
     private var focused = false
     private var downAt: NSPoint?
@@ -61,7 +61,7 @@ final class PaneHeaderView: NSView, NSDraggingSource {
         copyButton.onClick = { [weak self] in
             guard let self, let p = self.originWorktree?.path else { return }
             self.store.copyPath(p)
-            self.copyButton.toolTip = "已复制：" + p.abbreviatingHome
+            self.copyButton.toolTip = tr("已复制：", "Copied: ") + p.abbreviatingHome
         }
         moreButton.onClick = { [weak self] in
             guard let self, let wt = self.originWorktree else { return }
@@ -113,14 +113,14 @@ final class PaneHeaderView: NSView, NSDraggingSource {
         guard wt != nil else { return }
         let e = store.preferredEditor
         editorButton.image = e?.icon() ?? Icons.symbol("chevron.left.forwardslash.chevron.right", size: 11)
-        editorButton.toolTip = e.map { "用 \($0.name) 打开 ⌥⌘O" } ?? "选择打开方式"
-        copyButton.toolTip = "复制路径"
+        editorButton.toolTip = e.map { tr("用 \($0.name) 打开 ⌥⌘O", "Open in \($0.name) ⌥⌘O") } ?? tr("选择打开方式", "Choose how to open")
+        copyButton.toolTip = tr("复制路径", "Copy path")
     }
 
     private func updateOrigin(_ active: String?) {
         updateActions(active.flatMap { store.session($0) }.flatMap { store.worktree(for: $0) })
         guard let active, let s = store.session(active) else {
-            originChip.isHidden = true; origin.stringValue = "空栏"; originStatus.status = .history
+            originChip.isHidden = true; origin.stringValue = tr("空栏", "Empty pane"); originStatus.status = .history
             originState.stringValue = ""; sid.stringValue = ""; needsLayout = true; return
         }
         if let wt = store.worktree(for: s) {
@@ -134,9 +134,9 @@ final class PaneHeaderView: NSView, NSDraggingSource {
         }
         let st = store.status(of: active)
         originStatus.status = st
-        originState.stringValue = [.waiting: "需要你", .working: "工作中", .done: "完成", .failed: "出错", .running: "运行中"][st] ?? ""
+        originState.stringValue = [.waiting: tr("需要你", "Needs you"), .working: tr("工作中", "Working"), .done: tr("完成", "Done"), .failed: tr("出错", "Failed"), .running: tr("运行中", "Running")][st] ?? ""
         sid.stringValue = s.agentSessionID.map { String($0.prefix(8)) } ?? ""
-        sid.toolTip = s.agentSessionID.map { "会话 ID：\($0)" }
+        sid.toolTip = s.agentSessionID.map { tr("会话 ID：\($0)", "Session ID: \($0)") }
         needsLayout = true
     }
 
@@ -231,7 +231,7 @@ final class TabView: NSView, NSDraggingSource {
     private let icon = NSImageView()
     private let title = NSTextField.label(font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
     private let dot = DotView(frame: .zero)
-    private let close = IconButton(symbol: "xmark", size: 8, tooltip: "关闭 Tab", side: 16)
+    private let close = IconButton(symbol: "xmark", size: 8, tooltip: tr("关闭 Tab", "Close Tab"), side: 16)
     private var active = false, focused = false
     private var downAt: NSPoint?
 

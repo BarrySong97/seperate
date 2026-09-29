@@ -29,6 +29,7 @@
 - 仅截图模式:`shotsSetPhase(_:_:need:)` 直接摆出收件箱状态(平时由 agent hook 驱动)。
 
 ## 注意事项
+- **默认值按语言,已有数据不翻译**:新 Workspace 的默认名(「默认 / Default」)、通知和对话框文案走 `tr`;数据库里已有的名称、标题、别名是用户数据,原样保留。
 - **全部 `@MainActor`**。后台只做 `Core` 调用(`resolveProjects` 是 `nonisolated static`),结果必须回 `MainActor.run` 再写状态。
 - **变更通知模型**:没有 SwiftUI/Combine,也不整体重绘。每次改状态后必须调 `notify(<最窄的 Change>)`,否则视图不刷新、也不会保存(保存挂在 `notify` 上)。`.layout(structure: true)` 只在 pane 增删/嵌套变化时发出(用 `LayoutModel.shape` 比对),否则视图会整块重建。
 - 改布局一律走 `mutateLayout { }`,它负责比对、发通知、`markSeen()`;不要直接赋值 `layout`。

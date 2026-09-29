@@ -15,10 +15,10 @@ final class NewProjectSheet: NSObject, NSTextFieldDelegate {
     private let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 480, height: 250), styleMask: [.titled], backing: .buffered, defer: false)
     private let name = NSTextField()
     private let parentLabel = NSTextField.label(font: NSFont.systemFont(ofSize: 12), color: .labelColor)
-    private let gitBox = NSButton(checkboxWithTitle: "初始化 Git 仓库（main 分支 + 首次提交，之后可以开 Worktree）", target: nil, action: nil)
+    private let gitBox = NSButton(checkboxWithTitle: tr("初始化 Git 仓库（main 分支 + 首次提交，之后可以开 Worktree）", "Initialize a Git repository (main branch + first commit, so you can open worktrees later)"), target: nil, action: nil)
     private let location = NSTextField.label(font: NSFont.systemFont(ofSize: 11), color: .secondaryLabelColor)
     private let error = NSTextField.label(font: NSFont.systemFont(ofSize: 11), color: .systemRed)
-    private let create = NSButton(title: "创建", target: nil, action: nil)
+    private let create = NSButton(title: tr("创建", "Create"), target: nil, action: nil)
     private static var current: NewProjectSheet?   // keeps the sheet alive while it is open
     private static let parentKey = "NewProjectParent"
     private static let gitKey = "NewProjectGit"
@@ -51,15 +51,15 @@ final class NewProjectSheet: NSObject, NSTextFieldDelegate {
     private func build() {
         let v = NSView(frame: panel.contentRect(forFrameRect: panel.frame))
         panel.contentView = v
-        let title = NSTextField.label("新建项目，加入「\(store.active.name)」", font: NSFont.systemFont(ofSize: 14, weight: .semibold))
-        let nameLabel = NSTextField.label("项目名称", font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
-        name.placeholderString = "也是文件夹名，比如 my-app"
+        let title = NSTextField.label(tr("新建项目，加入「\(store.active.name)」", "New project in “\(store.active.name)”"), font: NSFont.systemFont(ofSize: 14, weight: .semibold))
+        let nameLabel = NSTextField.label(tr("项目名称", "Project name"), font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
+        name.placeholderString = tr("也是文件夹名，比如 my-app", "Also the folder name, like my-app")
         name.delegate = self
-        let whereLabel = NSTextField.label("放在", font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
+        let whereLabel = NSTextField.label(tr("放在", "Location"), font: NSFont.systemFont(ofSize: 12), color: .secondaryLabelColor)
         parentLabel.lineBreakMode = .byTruncatingMiddle
-        let choose = NSButton(title: "选择…", target: self, action: #selector(chooseParent))
+        let choose = NSButton(title: tr("选择…", "Choose…"), target: self, action: #selector(chooseParent))
         gitBox.state = UserDefaults.standard.object(forKey: Self.gitKey) as? Bool == false ? .off : .on
-        let cancel = NSButton(title: "取消", target: self, action: #selector(cancelSheet))
+        let cancel = NSButton(title: tr("取消", "Cancel"), target: self, action: #selector(cancelSheet))
         cancel.keyEquivalent = "\u{1b}"
         create.target = self; create.action = #selector(createProject)
         create.keyEquivalent = "\r"
@@ -90,12 +90,12 @@ final class NewProjectSheet: NSObject, NSTextFieldDelegate {
     private func update() {
         let n = trimmedName
         parentLabel.stringValue = parent.abbreviatingHome
-        location.stringValue = "位置：" + (parent as NSString).appendingPathComponent(n.isEmpty ? "<名称>" : n).abbreviatingHome
+        location.stringValue = tr("位置：", "Location: ") + (parent as NSString).appendingPathComponent(n.isEmpty ? tr("<名称>", "<name>") : n).abbreviatingHome
         let problem: String? = {
             if n.isEmpty { return nil }
-            if n.contains("/") || n.contains(":") || n == "." || n == ".." || n.hasPrefix(".") { return "名称里不能有 / 或 :，也不能以 . 开头" }
+            if n.contains("/") || n.contains(":") || n == "." || n == ".." || n.hasPrefix(".") { return tr("名称里不能有 / 或 :，也不能以 . 开头", "The name can’t contain / or : or start with .") }
             let dir = (parent as NSString).appendingPathComponent(n)
-            if let items = try? FileManager.default.contentsOfDirectory(atPath: dir), !items.isEmpty { return "这个位置已经有同名文件夹了" }
+            if let items = try? FileManager.default.contentsOfDirectory(atPath: dir), !items.isEmpty { return tr("这个位置已经有同名文件夹了", "A folder with this name already exists there") }
             return nil
         }()
         error.stringValue = problem ?? ""
@@ -110,8 +110,8 @@ final class NewProjectSheet: NSObject, NSTextFieldDelegate {
         p.canChooseFiles = false
         p.canCreateDirectories = true
         p.directoryURL = URL(fileURLWithPath: parent)
-        p.prompt = "选择"
-        p.message = "新项目的文件夹会建在这里"
+        p.prompt = tr("选择", "Choose")
+        p.message = tr("新项目的文件夹会建在这里", "The new project’s folder will be created here")
         p.beginSheetModal(for: panel) { [weak self] r in
             guard let self, r == .OK, let url = p.url else { return }
             self.parent = url.path

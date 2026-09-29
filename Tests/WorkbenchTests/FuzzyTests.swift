@@ -61,7 +61,10 @@ final class PaletteSearchTests: XCTestCase {
 }
 
 final class RelativeTimeTests: XCTestCase {
+    override func tearDown() { L10n.isChinese = (Locale.preferredLanguages.first ?? "en").hasPrefix("zh") }
+
     func testShortLabels() {
+        L10n.isChinese = true
         var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "Asia/Shanghai")!
         let now = cal.date(from: DateComponents(year: 2026, month: 9, day: 24, hour: 15))!
         let ago = { (s: TimeInterval) in RelativeTime.short(now.addingTimeInterval(-s), now: now, calendar: cal) }
@@ -72,5 +75,21 @@ final class RelativeTimeTests: XCTestCase {
         XCTAssertEqual(ago(4 * 86400), "4天")
         XCTAssertEqual(ago(12 * 86400), "9月12日")
         XCTAssertEqual(ago(400 * 86400), "2025年8月20日")
+    }
+
+    func testShortLabelsInEnglish() {
+        L10n.isChinese = false
+        var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        let now = cal.date(from: DateComponents(year: 2026, month: 9, day: 24, hour: 15))!
+        let ago = { (s: TimeInterval) in RelativeTime.short(now.addingTimeInterval(-s), now: now, calendar: cal) }
+        XCTAssertEqual(ago(20), "now")
+        XCTAssertEqual(ago(5 * 60), "5m")
+        XCTAssertEqual(ago(3 * 3600), "3h")
+        XCTAssertEqual(ago(20 * 3600), "yesterday")
+        XCTAssertEqual(ago(4 * 86400), "4d")
+        XCTAssertEqual(ago(12 * 86400), "Sep 12")
+        XCTAssertEqual(ago(400 * 86400), "Aug 20, 2025")
+        XCTAssertEqual(plural(1, "tab"), "1 tab")
+        XCTAssertEqual(plural(3, "tab"), "3 tabs")
     }
 }

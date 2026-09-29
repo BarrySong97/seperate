@@ -30,7 +30,7 @@ mv /Applications/Seperate.app ~/.Trash/Seperate-$(date +%Y%m%d-%H%M%S).app
 mv build/Seperate.app /Applications/Seperate.app
 ```
 - 不要 `killall`/`open` 这个 app;正在运行的旧进程不受影响,用户下次重启即是新版本。
-- 不要用安装器(`安装 Seperate.app`)做本地安装:它会主动让运行中的 Seperate 退出。
+- 不要用安装器(`Install Seperate.app`)做本地安装:它会主动让运行中的 Seperate 退出。
 
 ## 测试
 ```sh
@@ -73,7 +73,7 @@ node scripts/check-docs.mjs
 | `scripts/setup-ghostty.sh` | 构建 GhosttyKit 到 `Vendor/`(一次) |
 | `scripts/build-core.sh` | 构建 Rust core xcframework |
 | `scripts/build-app.sh debug\|release [--open]` | 组装 `build/Seperate.app` |
-| `scripts/build-installer.sh` | 组装 `build/安装 Seperate.app`(需先 release 构建) |
+| `scripts/build-installer.sh` | 组装 `build/Install Seperate.app`(需先 release 构建) |
 | `scripts/package-dmg.sh` | 出 DMG + Sparkle zip |
 | `scripts/make-appcast.sh <ver> <zip> <key> [notes]` | 签名 zip 并写 `build/appcast.xml`(发布流程内部用) |
 | `scripts/release.sh <ver>` | 打 tag 触发 GitHub 发布 |

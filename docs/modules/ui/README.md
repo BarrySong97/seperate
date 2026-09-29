@@ -64,7 +64,7 @@
 - **聚焦终端前确认它已在本窗口**：切 Workspace 有 0.12s 淡出，重建前终端还没挂上；`focusActiveTerminal` 只在 `t.window === window` 时设 first responder，重建完成后再聚焦。
 - **动效**：统一用 `SidebarView.motion`（0.28s，曲线 0.2,0.8,0.2,1）；`DotView` 在「减少动态效果」开启时不转不闪。裸 CALayer 改 frame 会隐式动画，需要时 `CATransaction.setDisableActions(true)`。
 - **标题栏区域**：窗口 `fullSizeContentView` + 透明标题栏；顶栏和侧栏顶部 38pt 自己处理 `handleTitlebarMouseDown`（拖动 / 双击按系统设置缩放）。侧栏隐藏时顶栏左侧留 78pt 给红绿灯。
-- **中文 UI**：所有用户可见文案（菜单、tooltip、对话框、相对时间）是简体中文；「Session / Tab / Worktree / Workspace」等术语保留英文。代码注释是英文。
+- **双语 UI**：所有用户可见文案（菜单、tooltip、对话框、相对时间）写成 `tr("中文", "English")`，启动时按语言取一边（菜单「语言」切换，重启生效，[ADR-0006](../../decisions/0006-bilingual-ui.md)）。中文里「Session / Tab / Worktree / Workspace」等术语保留英文；英文用 macOS 菜单的标题式大小写（Close Other Tabs）。英文更长，改布局时两种语言都要看。代码注释是英文。
 - **侧栏展开状态交给 AppKit autosave**（每个 Workspace 一个 `autosaveName`），app 不自己持久化；细节见 [sidebar.md](./sidebar.md)。
 - **Sheet 生命周期**：`NewProjectSheet` / `NewWorktreeSheet` 用静态 `current` 引用保活，sheet 结束时清空。
 - **批量关 Tab**：Tab 右键「关闭其他 / 左侧 / 右侧 / 所有 Tab」走 `Store.closeTabs`，只要其中有终端还在跑进程（Ghostty 的 `needs_confirm_quit`）就只弹一次确认，不逐个弹；单个「关闭 Tab」仍走 `closeTab`。

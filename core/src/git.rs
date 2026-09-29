@@ -227,7 +227,7 @@ pub fn worktree_add_from(root: &Path, dir: &Path, branch: Option<&str>, base: &s
 /// first commit (worktrees need a commit to start from). Refuses a folder that already has files in it.
 pub fn project_create(dir: &Path, init: bool) -> Result<(), String> {
     if fs::read_dir(dir).map(|mut e| e.next().is_some()).unwrap_or(false) {
-        return Err(format!("{} 已经存在且不是空文件夹", display(dir)));
+        return Err(format!("{} already exists and is not empty", display(dir)));
     }
     fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let name = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();

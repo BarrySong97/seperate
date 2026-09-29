@@ -1,10 +1,14 @@
-// @purpose Entry point of the "安装 Seperate.app" installer: parses CLI flags, then runs headless or shows the window.
+// @purpose Entry point of the "Install Seperate.app" installer: parses CLI flags, then runs headless or shows the window.
 // @role    Executable of the SeperateInstaller target; builds an Installation and hands it to InstallerController (or installs directly with --install-to).
 // @deps    AppKit; Installation.swift, InstallerWindow.swift; the Seperate.app payload in the bundle's Resources.
 // @gotcha  Payload defaults to Contents/Resources/Seperate.app, so a bare `swift run` needs --payload; see docs/modules/installer/README.md
 import AppKit
 
-// "安装 Seperate.app": the double-click installer shown in the DMG. It carries Seperate.app in its Resources.
+/// Installer UI language: follows the system (Chinese if it prefers Chinese, English otherwise).
+let isChinese = (Locale.preferredLanguages.first ?? "en").hasPrefix("zh")
+func tr(_ zh: String, _ en: String) -> String { isChinese ? zh : en }
+
+// "Install Seperate.app" (“安装 Seperate” on a Chinese system): the double-click installer shown in the DMG. It carries Seperate.app in its Resources.
 //   --install-to DIR   install without a window (used by CI and tests)
 //   --payload APP      install this Seperate.app instead of the bundled one
 //   --snapshot DIR     render each installer step to a PNG for design review
@@ -45,7 +49,7 @@ MainActor.assumeIsolated {
     app.setActivationPolicy(.regular)
     let menu = NSMenu()
     let appItem = NSMenuItem(); appItem.submenu = NSMenu()
-    appItem.submenu?.addItem(NSMenuItem(title: "退出安装", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+    appItem.submenu?.addItem(NSMenuItem(title: tr("退出安装", "Quit Installer"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     menu.addItem(appItem)
     app.mainMenu = menu
     controller.show()

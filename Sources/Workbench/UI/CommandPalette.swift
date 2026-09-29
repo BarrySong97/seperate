@@ -29,7 +29,7 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
     private let table = NSTableView()
     private let scroll = NSScrollView()
     private let footer = NSTextField.label(font: NSFont.systemFont(ofSize: 11), color: Theme.faint)
-    private let empty = NSTextField.label("没有匹配的结果", font: NSFont.systemFont(ofSize: 12.5), color: Theme.faint)
+    private let empty = NSTextField.label(tr("没有匹配的结果", "No results"), font: NSFont.systemFont(ofSize: 12.5), color: Theme.faint)
     private var keyMonitor: Any?
     var onClose: (() -> Void)?
 
@@ -64,7 +64,7 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
         field.focusRingType = .none
         field.font = NSFont.systemFont(ofSize: 16)
         field.textColor = Theme.text
-        field.placeholderAttributedString = NSAttributedString(string: scope == .all ? "搜索所有项目的会话、Workspace、命令…（支持拼音）" : "搜索会话名称…（支持拼音）",
+        field.placeholderAttributedString = NSAttributedString(string: scope == .all ? tr("搜索所有项目的会话、Workspace、命令…（支持拼音）", "Search sessions, workspaces and commands in all projects… (pinyin works)") : tr("搜索会话名称…（支持拼音）", "Search session names… (pinyin works)"),
                                                                attributes: [.foregroundColor: Theme.faint, .font: NSFont.systemFont(ofSize: 16)])
         field.delegate = self
         field.cell?.isScrollable = true
@@ -88,7 +88,7 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
         scroll.autohidesScrollers = true
         scroll.drawsBackground = false
         scroll.scrollerStyle = .overlay
-        footer.stringValue = "↑↓ 选择   ⏎ 打开   ⌘⏎ 向右分屏打开   ⌘1–9 快速选择   esc 关闭"
+        footer.stringValue = tr("↑↓ 选择   ⏎ 打开   ⌘⏎ 向右分屏打开   ⌘1–9 快速选择   esc 关闭", "↑↓ select   ⏎ open   ⌘⏎ open in a split   ⌘1–9 quick pick   esc close")
         empty.alignment = .center
         [glass, field, scopeLabel, scroll, footer, empty].forEach(card.addSubview)
         refresh()
@@ -119,9 +119,9 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
                 let status = store.status(of: s.id)
                 var hint: String? = nil
                 if let m = store.phaseMessage(of: s.id), status == .waiting || status == .done { hint = String(m.prefix(36)) }
-                else if store.layout.pane(containing: s.id) != nil { hint = "已打开" }
-                else if let w = store.workspaceContaining(s.id) { hint = "在「\(w.name)」" }
-                else if let name = elsewhere { hint = "在「\(name)」" }
+                else if store.layout.pane(containing: s.id) != nil { hint = tr("已打开", "Open") }
+                else if let w = store.workspaceContaining(s.id) { hint = tr("在「\(w.name)」", "In “\(w.name)”") }
+                else if let name = elsewhere { hint = tr("在「\(name)」", "In “\(name)”") }
                 out.append(PaletteEntry(kind: .session(s.id), section: .sessions, title: title, context: scope == .all ? context : "",
                                         keys: [project, wt.alias, s.kind.displayName, s.kind.rawValue],
                                         running: status != .history, local: local, recency: s.lastActivity, agent: s.kind, status: status,
@@ -130,19 +130,19 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
         }
         guard scope == .all else { return out }
         for w in store.workspaces where w.id != store.activeID {
-            out.append(PaletteEntry(kind: .workspace(w.id), section: .workspaces, title: "切换到「\(w.name)」",
+            out.append(PaletteEntry(kind: .workspace(w.id), section: .workspaces, title: tr("切换到「\(w.name)」", "Switch to “\(w.name)”"),
                                     keys: [w.name, "workspace"], symbol: "square.stack", pinyin: Core.pinyinKeys(w.name)))
         }
         for wt in wts where activeRoots.contains(wt.projectID) {   // "new …" only for this workspace's projects
             let project = store.projectName(of: wt)
             let multi = (store.project(wt.projectID).map(store.worktrees(of:))?.count ?? 1) > 1
             for k in AgentKind.allCases {
-                let title = "新建 \(k.displayName)"
+                let title = tr("新建 \(k.displayName)", "New \(k.displayName)")
                 out.append(PaletteEntry(kind: .create(k, wt), section: .create, title: title,
                                         context: multi ? "\(project) / \(wt.alias)" : project,
                                         keys: [project, wt.alias, k.rawValue], agent: k, pinyin: Core.pinyinKeys(title)))
                 if k == .claude {
-                    let title = "新建 \(AgentKind.skipPermissionsName)"
+                    let title = tr("新建 \(AgentKind.skipPermissionsName)", "New \(AgentKind.skipPermissionsName)")
                     out.append(PaletteEntry(kind: .create(.claude, wt, skipPermissions: true), section: .create, title: title,
                                             context: multi ? "\(project) / \(wt.alias)" : project,
                                             keys: [project, wt.alias, "claude", "dangerously skip permissions yolo"],
@@ -154,13 +154,13 @@ final class CommandPalette: NSView, NSTableViewDataSource, NSTableViewDelegate, 
             out.append(PaletteEntry(kind: .command(title, action), section: .commands, title: title, keys: keys,
                                     symbol: symbol, pinyin: Core.pinyinKeys(title)))
         }
-        command("新建项目…", "plus.rectangle.on.folder", ["new create project git init"]) { store.promptNewProject() }
-        command("添加项目…", "folder.badge.plus", ["add project"]) { store.pickProject() }
-        command("从 Agent 使用过的项目导入…", "square.and.arrow.down", ["import agent project codex claude"]) { store.showImport() }
-        command("新建 Workspace…", "plus.square.on.square", ["new workspace"]) { store.promptNewWorkspace() }
-        command(store.sidebarHidden ? "显示侧栏" : "隐藏侧栏", "sidebar.left", ["sidebar"]) { store.toggleSidebar() }
+        command(tr("新建项目…", "New Project…"), "plus.rectangle.on.folder", ["new create project git init"]) { store.promptNewProject() }
+        command(tr("添加项目…", "Add Project…"), "folder.badge.plus", ["add project"]) { store.pickProject() }
+        command(tr("从 Agent 使用过的项目导入…", "Import Projects Your Agents Used…"), "square.and.arrow.down", ["import agent project codex claude"]) { store.showImport() }
+        command(tr("新建 Workspace…", "New Workspace…"), "plus.square.on.square", ["new workspace"]) { store.promptNewWorkspace() }
+        command(store.sidebarHidden ? tr("显示侧栏", "Show Sidebar") : tr("隐藏侧栏", "Hide Sidebar"), "sidebar.left", ["sidebar"]) { store.toggleSidebar() }
         for p in LayoutPreset.allCases {
-            command(p == .grid ? "布局：2×2" : "布局：\(p.paneCount) 栏", "rectangle.split.3x1", ["layout", p.rawValue]) { store.apply(p) }
+            command(p == .grid ? tr("布局：2×2", "Layout: 2×2") : tr("布局：\(p.paneCount) 栏", "Layout: \(p.paneCount) Panes"), "rectangle.split.3x1", ["layout", p.rawValue]) { store.apply(p) }
         }
         return out
     }

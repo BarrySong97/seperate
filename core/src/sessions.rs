@@ -63,7 +63,7 @@ pub fn scan_codex(root: &Path, cutoff: SystemTime) -> Vec<Session> {
                 kind: "codex".into(),
                 agent_session_id: id.to_string(),
                 cwd: cwd.to_string(),
-                title: titles.get(id).cloned().unwrap_or_else(|| "Codex 会话".into()),
+                title: titles.get(id).cloned().unwrap_or_default(), // empty: the app shows its own "Codex session"
                 last_activity: secs,
             },
         );
@@ -96,7 +96,7 @@ pub fn scan_claude(root: &Path, cutoff: SystemTime) -> Vec<Session> {
             kind: "claude".into(),
             agent_session_id: sid,
             cwd,
-            title: title.unwrap_or_else(|| "Claude 会话".into()),
+            title: title.unwrap_or_default(), // empty: the app shows its own "Claude session"
             last_activity: unix(modified),
         });
     }

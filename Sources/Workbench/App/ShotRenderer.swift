@@ -32,7 +32,7 @@ enum ShotRenderer {
         GhosttyRuntime.shared.start()
 
         let store = Store()
-        store.renameWorkspace(store.activeID, to: "工作")
+        store.renameWorkspace(store.activeID, to: tr("工作", "Work"))
         let wc = MainWindowController(store: store)
         keep = [store, wc]
         guard let window = wc.window else { throw Failure(description: "no window") }
@@ -60,7 +60,7 @@ enum ShotRenderer {
             return s
         }
         let notesSearch = try find(.claude, "lumen-notes")
-        let darkMode = try find(.codex, "暗色模式")
+        let darkMode = try find(.codex, "暗色模式")   // l10n: data (the demo session's own title)
         let apiTests = try find(.claude, "pixel-api")
         let atlasJSON = try find(.codex, "atlas-cli")
         print("render-shots: sessions \(sessions.map { "\($0.kind.rawValue):\($0.title)" })")
@@ -75,7 +75,7 @@ enum ShotRenderer {
         try await settle(store, window)
         // Inbox states normally come from the agents' hooks; this run has none, so set them.
         store.shotsSetPhase(atlasJSON.id, .needsInput("Approval requested: cargo run -- --json to"), need: .permission)
-        store.shotsSetPhase(notesSearch.id, .done("已加上 searchNotes(query)：按标题搜索，忽略大小写"))
+        store.shotsSetPhase(notesSearch.id, .done(tr("已加上 searchNotes(query)：按标题搜索，忽略大小写", "Added searchNotes(query): searches titles, case-insensitive")))
         store.shotsSetPhase(apiTests.id, .working)
         try await pause(1)
         try save(capture(window), "hero", out)

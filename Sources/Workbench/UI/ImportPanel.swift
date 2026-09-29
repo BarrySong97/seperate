@@ -26,17 +26,17 @@ final class ImportPanel: NSView, NSTableViewDataSource, NSTableViewDelegate, NST
 
     private let scrim = NSView()
     private let card = ImportFlippedView()
-    private let titleLabel = NSTextField.label("从 Agent 使用过的项目导入", font: NSFont.systemFont(ofSize: 14, weight: .semibold))
-    private let hint = NSTextField.label("按最近使用排序 · 子目录和 Worktree 已归到各自的仓库", font: Theme.smallFont, color: Theme.faint)
+    private let titleLabel = NSTextField.label(tr("从 Agent 使用过的项目导入", "Import Projects Your Agents Used"), font: NSFont.systemFont(ofSize: 14, weight: .semibold))
+    private let hint = NSTextField.label(tr("按最近使用排序 · 子目录和 Worktree 已归到各自的仓库", "Most recent first · subfolders and worktrees are grouped under their repository"), font: Theme.smallFont, color: Theme.faint)
     private let glass = NSImageView()
     private let field = NSTextField()
     private let table = NSTableView()
     private let scroll = NSScrollView()
-    private let empty = NSTextField.label("没有找到 Agent 用过的项目", font: NSFont.systemFont(ofSize: 12.5), color: Theme.faint)
+    private let empty = NSTextField.label(tr("没有找到 Agent 用过的项目", "No projects used by your agents were found"), font: NSFont.systemFont(ofSize: 12.5), color: Theme.faint)
     private let target = NSPopUpButton()
-    private let targetLabel = NSTextField.label("导入到", font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
-    private let cancel = NSButton(title: "取消", target: nil, action: nil)
-    private let confirm = NSButton(title: "导入", target: nil, action: nil)
+    private let targetLabel = NSTextField.label(tr("导入到", "Import into"), font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
+    private let cancel = NSButton(title: tr("取消", "Cancel"), target: nil, action: nil)
+    private let confirm = NSButton(title: tr("导入", "Import"), target: nil, action: nil)
     private var keyMonitor: Any?
     var contentRect: NSRect = .zero { didSet { needsLayout = true } }
 
@@ -65,7 +65,7 @@ final class ImportPanel: NSView, NSTableViewDataSource, NSTableViewDelegate, NST
         field.focusRingType = .none
         field.font = NSFont.systemFont(ofSize: 14)
         field.textColor = Theme.text
-        field.placeholderAttributedString = NSAttributedString(string: "搜索项目名、路径…（支持拼音）",
+        field.placeholderAttributedString = NSAttributedString(string: tr("搜索项目名、路径…（支持拼音）", "Search project names, paths… (pinyin works)"),
                                                                attributes: [.foregroundColor: Theme.faint, .font: NSFont.systemFont(ofSize: 14)])
         field.delegate = self
         field.cell?.isScrollable = true
@@ -114,7 +114,7 @@ final class ImportPanel: NSView, NSTableViewDataSource, NSTableViewDelegate, NST
     private func reload(query: String) {
         generation += 1
         let gen = generation
-        if rows.isEmpty { empty.stringValue = "正在查找 Agent 用过的项目…"; empty.isHidden = false }
+        if rows.isEmpty { empty.stringValue = tr("正在查找 Agent 用过的项目…", "Looking for projects your agents used…"); empty.isHidden = false }
         Task.detached(priority: .userInitiated) {
             let found = Core.agentProjects(query: query)
             await MainActor.run { [weak self] in
@@ -136,18 +136,18 @@ final class ImportPanel: NSView, NSTableViewDataSource, NSTableViewDelegate, NST
             if open { out += scratch.map { .project($0, addedIn: nil) } }
         }
         if !added.isEmpty {
-            out.append(.header("已在 Seperate"))
+            out.append(.header(tr("已在 Seperate", "Already in Seperate")))
             out += added.map { .project($0, addedIn: addedIn[$0.root]) }
         }
         rows = out
         table.reloadData()
         empty.isHidden = !rows.isEmpty
-        empty.stringValue = query.isEmpty ? "没有找到 Agent 用过的项目" : "没有匹配的项目"
+        empty.stringValue = query.isEmpty ? tr("没有找到 Agent 用过的项目", "No projects used by your agents were found") : tr("没有匹配的项目", "No matching projects")
         updateConfirm()
     }
 
     private func updateConfirm() {
-        confirm.title = checked.isEmpty ? "导入" : "导入 \(checked.count) 个项目"
+        confirm.title = checked.isEmpty ? tr("导入", "Import") : tr("导入 \(checked.count) 个项目", "Import \(plural(checked.count, "project"))")
         confirm.isEnabled = !checked.isEmpty
         needsLayout = true
     }
@@ -310,9 +310,9 @@ private final class ImportProjectCell: NSTableCellView {
         box.contentTintColor = addedIn != nil ? Theme.faint : (checked ? Theme.accent : Theme.muted)
         name.stringValue = p.name
         name.textColor = enabled ? Theme.text : Theme.faint
-        path.stringValue = p.root.abbreviatingHome + (p.git ? "" : "  ·  普通文件夹")
+        path.stringValue = p.root.abbreviatingHome + (p.git ? "" : tr("  ·  普通文件夹", "  ·  plain folder"))
         let date = Date(timeIntervalSince1970: TimeInterval(p.lastUsed))
-        when.stringValue = addedIn.map { "已在「\($0)」" } ?? RelativeTime.short(date)
+        when.stringValue = addedIn.map { tr("已在「\($0)」", "In “\($0)”") } ?? RelativeTime.short(date)
         agents.stringValue = [p.codex > 0 ? "Codex \(p.codex)" : nil, p.claude > 0 ? "Claude \(p.claude)" : nil].compactMap { $0 }.joined(separator: " · ")
         toolTip = p.root
         needsLayout = true; needsDisplay = true
@@ -359,7 +359,7 @@ private final class ImportScratchCell: NSTableCellView {
     func configure(count: Int, open: Bool) {
         chevron.image = Icons.symbol(open ? "chevron.down" : "chevron.right", size: 9)
         chevron.contentTintColor = Theme.faint
-        label.stringValue = "Codex 桌面版的临时对话目录（\(count) 个）"
+        label.stringValue = tr("Codex 桌面版的临时对话目录（\(count) 个）", "Codex desktop scratch folders (\(count))")
         needsLayout = true
     }
 

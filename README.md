@@ -5,7 +5,7 @@ A macOS workbench for running coding agents (Claude Code, Codex) and shells side
 ## Install
 
 1. Download `Seperate-<version>.dmg` from the [latest release](https://github.com/BarrySong97/seperate/releases/latest) and open it.
-2. Double-click **安装 Seperate**. The installer copies Seperate into Applications (replacing an older copy) and opens it.
+2. Double-click **Install Seperate** (安装 Seperate). The installer copies Seperate into Applications (replacing an older copy) and opens it.
 3. Builds are not notarized yet, so macOS blocks the installer the first time. Open **System Settings → Privacy & Security** and click **Open Anyway**. You only do this once. Seperate itself then opens without a warning.
 
 Requires macOS 14 or later on Apple Silicon.

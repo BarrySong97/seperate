@@ -17,7 +17,7 @@ enum Menus {
             if k == .claude {
                 let skip = ActionItem(AgentKind.skipPermissionsName) { before?(); store.newSession(.claude, in: wt, skipPermissions: true) }
                 skip.image = Icons.agent(.claude, size: 12)
-                skip.toolTip = "以 --dangerously-skip-permissions 启动：不再询问权限，直接执行命令和改文件"
+                skip.toolTip = tr("以 --dangerously-skip-permissions 启动：不再询问权限，直接执行命令和改文件", "Starts with --dangerously-skip-permissions: no permission prompts; runs commands and edits files directly")
                 menu.addItem(skip)
             }
         }
@@ -44,7 +44,7 @@ enum Menus {
             m.addItem(item)
         }
         if store.visibleProjects.isEmpty {
-            m.addItem(ActionItem("添加项目…") { store.pickProject() })
+            m.addItem(ActionItem(tr("添加项目…", "Add Project…")) { store.pickProject() })
         }
         return m
     }
@@ -61,13 +61,13 @@ enum Menus {
             if wts.count > 1 { m.addItem(.separator()) }
         }
         if wts.count <= 1 { m.addItem(.separator()) }
-        if p.isGit { m.addItem(ActionItem("新建 Worktree…") { store.promptNewWorktree(in: p) }) }
+        if p.isGit { m.addItem(ActionItem(tr("新建 Worktree…", "New Worktree…")) { store.promptNewWorktree(in: p) }) }
         // Every worktree's own menu, including ones the sidebar does not list (no sessions yet).
         if wts.count > 1 {
-            let manage = NSMenuItem(title: "管理 Worktree", action: nil, keyEquivalent: "")
+            let manage = NSMenuItem(title: tr("管理 Worktree", "Manage Worktrees"), action: nil, keyEquivalent: "")
             let sub = NSMenu()
             for wt in wts {
-                let it = NSMenuItem(title: wt.alias + (wt.isMain ? "（主目录）" : ""), action: nil, keyEquivalent: "")
+                let it = NSMenuItem(title: wt.alias + (wt.isMain ? tr("（主目录）", " (Main)") : ""), action: nil, keyEquivalent: "")
                 it.submenu = worktree(store, wt)
                 sub.addItem(it)
             }
@@ -75,19 +75,19 @@ enum Menus {
             m.addItem(manage)
         }
         if let hidden = WorktreeDialogs.hiddenMenu(store, p) { m.addItem(hidden) }
-        m.addItem(ActionItem("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: p.rootPath)]) })
-        m.addItem(ActionItem("复制路径") { store.copyPath(p.rootPath) })
+        m.addItem(ActionItem(tr("在 Finder 中显示", "Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: p.rootPath)]) })
+        m.addItem(ActionItem(tr("复制路径", "Copy Path")) { store.copyPath(p.rootPath) })
         m.addItem(.separator())
         let others = store.workspaces.filter { $0.id != store.activeID }
-        let move = NSMenuItem(title: "移到 Workspace", action: nil, keyEquivalent: "")
+        let move = NSMenuItem(title: tr("移到 Workspace", "Move to Workspace"), action: nil, keyEquivalent: "")
         let sub = NSMenu()
         for w in others { sub.addItem(ActionItem(w.name) { store.moveProject(p, to: w.id) }) }
         move.submenu = sub
         move.isEnabled = !others.isEmpty
         m.addItem(move)
-        if store.active.projectRoots.first != p.id { m.addItem(ActionItem("移到最上面") { store.reorderProject(p.id, to: 0) }) }
+        if store.active.projectRoots.first != p.id { m.addItem(ActionItem(tr("移到最上面", "Move to Top")) { store.reorderProject(p.id, to: 0) }) }
         m.addItem(.separator())
-        m.addItem(ActionItem("从 Seperate 移除…") { store.promptRemoveProject(p) })
+        m.addItem(ActionItem(tr("从 Seperate 移除…", "Remove from Seperate…")) { store.promptRemoveProject(p) })
         return m
     }
 
@@ -99,21 +99,21 @@ enum Menus {
             let paths = store.worktrees(of: p).map(\.path)
             if let i = paths.firstIndex(of: wt.path), paths.count > 1 {
                 if i > 0 {
-                    m.addItem(ActionItem("移到最上面") { store.reorderWorktree(wt.path, before: paths[0]) })
-                    m.addItem(ActionItem("上移") { store.reorderWorktree(wt.path, before: paths[i - 1]) })
+                    m.addItem(ActionItem(tr("移到最上面", "Move to Top")) { store.reorderWorktree(wt.path, before: paths[0]) })
+                    m.addItem(ActionItem(tr("上移", "Move Up")) { store.reorderWorktree(wt.path, before: paths[i - 1]) })
                 }
-                if i < paths.count - 1 { m.addItem(ActionItem("下移") { store.reorderWorktree(wt.path, before: i + 2 < paths.count ? paths[i + 2] : nil) }) }
+                if i < paths.count - 1 { m.addItem(ActionItem(tr("下移", "Move Down")) { store.reorderWorktree(wt.path, before: i + 2 < paths.count ? paths[i + 2] : nil) }) }
                 m.addItem(.separator())
             }
         }
-        m.addItem(ActionItem("重命名…") { store.promptRename(wt) })
+        m.addItem(ActionItem(tr("重命名…", "Rename…")) { store.promptRename(wt) })
         m.addItem(.separator())
         openItems(store, path: wt.path, into: m)
         if !wt.isMain {
             m.addItem(.separator())
-            m.addItem(ActionItem("从 Seperate 移除…") { WorktreeDialogs.confirmHide(store, wt) })
-            let del = ActionItem("从磁盘删除…") { WorktreeDialogs.confirmDelete(store, wt) }
-            del.attributedTitle = NSAttributedString(string: "从磁盘删除…", attributes: [.foregroundColor: NSColor.systemRed, .font: NSFont.menuFont(ofSize: 0)])
+            m.addItem(ActionItem(tr("从 Seperate 移除…", "Remove from Seperate…")) { WorktreeDialogs.confirmHide(store, wt) })
+            let del = ActionItem(tr("从磁盘删除…", "Delete from Disk…")) { WorktreeDialogs.confirmDelete(store, wt) }
+            del.attributedTitle = NSAttributedString(string: tr("从磁盘删除…", "Delete from Disk…"), attributes: [.foregroundColor: NSColor.systemRed, .font: NSFont.menuFont(ofSize: 0)])
             m.addItem(del)
         }
         return m
@@ -121,23 +121,23 @@ enum Menus {
 
     /// Finder, the default editor, the other installed editors / terminals (with their icons), copy path.
     static func openItems(_ store: Store, path: String, into m: NSMenu) {
-        let finder = ActionItem("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) }
+        let finder = ActionItem(tr("在 Finder 中显示", "Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) }
         finder.image = ExternalApp.finderIcon
         m.addItem(finder)
         let preferred = store.preferredEditor
         if let e = preferred {
-            let it = ActionItem("用 \(e.name) 打开") { e.open(path) }
+            let it = ActionItem(tr("用 \(e.name) 打开", "Open in \(e.name)")) { e.open(path) }
             it.image = e.icon()
             it.keyEquivalent = "o"; it.keyEquivalentModifierMask = [.command, .option]
             m.addItem(it)
         }
         let others = ExternalApp.installed.filter { $0 != preferred }
         if !others.isEmpty {
-            let item = NSMenuItem(title: "用其他应用打开", action: nil, keyEquivalent: "")
+            let item = NSMenuItem(title: tr("用其他应用打开", "Open With"), action: nil, keyEquivalent: "")
             item.submenu = appsMenu(store, path: path, apps: others)
             m.addItem(item)
         }
-        m.addItem(ActionItem("复制路径") { store.copyPath(path) })
+        m.addItem(ActionItem(tr("复制路径", "Copy Path")) { store.copyPath(path) })
     }
 
     /// Installed editors, then terminals, each with its icon; plus "set as default editor".
@@ -147,7 +147,7 @@ enum Menus {
         for a in editors {
             let it = ActionItem(a.name) { a.open(path) }
             it.image = a.icon()
-            if a == store.preferredEditor { it.title = a.name + "（默认）" }
+            if a == store.preferredEditor { it.title = a.name + tr("（默认）", " (Default)") }
             m.addItem(it)
         }
         if !editors.isEmpty && !terms.isEmpty { m.addItem(.separator()) }
@@ -159,7 +159,7 @@ enum Menus {
         let choices = ExternalApp.editors
         if choices.count > 1 {
             m.addItem(.separator())
-            let def = NSMenuItem(title: "设为默认编辑器", action: nil, keyEquivalent: "")
+            let def = NSMenuItem(title: tr("设为默认编辑器", "Set as Default Editor"), action: nil, keyEquivalent: "")
             let sub = NSMenu()
             for a in choices {
                 let it = ActionItem(a.name) { store.setDefaultEditor(a) }
@@ -181,15 +181,15 @@ enum Menus {
             where_.isEnabled = false
             m.addItem(where_)
             kinds(store, wt: wt, into: m) { store.focusSession(id) }
-            for item in m.items.dropFirst() { item.title = "新建" + (item.title.first?.isASCII == true ? " " : "") + item.title }
+            for item in m.items.dropFirst() { item.title = tr("新建", "New") + (item.title.first?.isASCII == true ? " " : "") + item.title }
             m.addItem(.separator())
         }
-        if view.hasSelection { m.addItem(ActionItem("复制") { view.copy(nil) }) }
-        m.addItem(ActionItem("粘贴") { view.paste(nil) })
+        if view.hasSelection { m.addItem(ActionItem(tr("复制", "Copy")) { view.copy(nil) }) }
+        m.addItem(ActionItem(tr("粘贴", "Paste")) { view.paste(nil) })
         m.addItem(.separator())
         if let pane = store.layout.pane(containing: id) {
-            m.addItem(ActionItem("向右分屏") { store.focusSession(id); store.splitFocused(pane.id, edge: .right) })
-            m.addItem(ActionItem("向下分屏") { store.focusSession(id); store.splitFocused(pane.id, edge: .bottom) })
+            m.addItem(ActionItem(tr("向右分屏", "Split Right")) { store.focusSession(id); store.splitFocused(pane.id, edge: .right) })
+            m.addItem(ActionItem(tr("向下分屏", "Split Down")) { store.focusSession(id); store.splitFocused(pane.id, edge: .bottom) })
         }
         return m
     }
@@ -198,9 +198,9 @@ enum Menus {
     static func tab(_ store: Store, sessionID id: String, paneID: String) -> NSMenu {
         let m = NSMenu()
         m.autoenablesItems = false
-        m.addItem(ActionItem("关闭 Tab") { store.closeTab(id) })
+        m.addItem(ActionItem(tr("关闭 Tab", "Close Tab")) { store.closeTab(id) })
         guard let pane = store.layout.panes.first(where: { $0.id == paneID }) else { return m }
-        let groups: [(String, Pane.TabGroup)] = [("关闭其他 Tab", .others), ("关闭左侧 Tab", .left), ("关闭右侧 Tab", .right)]
+        let groups: [(String, Pane.TabGroup)] = [(tr("关闭其他 Tab", "Close Other Tabs"), .others), (tr("关闭左侧 Tab", "Close Tabs to the Left"), .left), (tr("关闭右侧 Tab", "Close Tabs to the Right"), .right)]
         for (title, g) in groups {
             let ids = pane.tabs(g, of: id)
             let item = ActionItem(title) { store.closeTabs(ids) }
@@ -209,17 +209,17 @@ enum Menus {
         }
         m.addItem(.separator())
         let all = pane.tabs(.all, of: id)
-        m.addItem(ActionItem("关闭所有 Tab") { store.closeTabs(all) })
+        m.addItem(ActionItem(tr("关闭所有 Tab", "Close All Tabs")) { store.closeTabs(all) })
         return m
     }
 
     static func session(_ store: Store, _ s: AgentSession) -> NSMenu {
         let m = NSMenu()
-        m.addItem(ActionItem("在新栏打开") { store.open(s.id, newPane: true) })
-        m.addItem(ActionItem(store.isPinned(s.id) ? "取消置顶" : "置顶") { store.togglePin(s.id) })
-        if store.status(of: s.id) != .history { m.addItem(ActionItem("结束会话") { store.closeTab(s.id) }) }
+        m.addItem(ActionItem(tr("在新栏打开", "Open in New Pane")) { store.open(s.id, newPane: true) })
+        m.addItem(ActionItem(store.isPinned(s.id) ? tr("取消置顶", "Unpin") : tr("置顶", "Pin")) { store.togglePin(s.id) })
+        if store.status(of: s.id) != .history { m.addItem(ActionItem(tr("结束会话", "End Session")) { store.closeTab(s.id) }) }
         if let cmd = s.launchCommand, s.agentSessionID != nil {
-            m.addItem(ActionItem("复制恢复命令") {
+            m.addItem(ActionItem(tr("复制恢复命令", "Copy Resume Command")) {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString("cd \(s.cwd) && \(cmd)", forType: .string)
             })
@@ -229,17 +229,17 @@ enum Menus {
 
     static func workspace(_ store: Store, _ w: Workspace) -> NSMenu {
         let m = NSMenu()
-        m.addItem(ActionItem("重命名…") { store.promptRenameWorkspace(w) })
+        m.addItem(ActionItem(tr("重命名…", "Rename…")) { store.promptRenameWorkspace(w) })
         // Order (also by dragging the squares); ⌃1…⌃9 follow it.
         if let i = store.workspaces.firstIndex(where: { $0.id == w.id }), store.workspaces.count > 1 {
             if i > 0 {
-                m.addItem(ActionItem("移到最前") { store.reorderWorkspace(w.id, to: 0) })
-                m.addItem(ActionItem("向前移") { store.reorderWorkspace(w.id, to: i - 1) })
+                m.addItem(ActionItem(tr("移到最前", "Move to Front")) { store.reorderWorkspace(w.id, to: 0) })
+                m.addItem(ActionItem(tr("向前移", "Move Forward")) { store.reorderWorkspace(w.id, to: i - 1) })
             }
-            if i < store.workspaces.count - 1 { m.addItem(ActionItem("向后移") { store.reorderWorkspace(w.id, to: i + 2) }) }
+            if i < store.workspaces.count - 1 { m.addItem(ActionItem(tr("向后移", "Move Back")) { store.reorderWorkspace(w.id, to: i + 2) }) }
             m.addItem(.separator())
         }
-        let color = NSMenuItem(title: "颜色", action: nil, keyEquivalent: "")
+        let color = NSMenuItem(title: tr("颜色", "Color"), action: nil, keyEquivalent: "")
         let colors = NSMenu()
         for t in Workspace.tints {
             let it = ActionItem(t.name) { store.setColor(w.id, t.color) }
@@ -248,12 +248,12 @@ enum Menus {
             colors.addItem(it)
         }
         colors.addItem(.separator())
-        let custom = ActionItem("自定义…") { WorkspaceColorPicker.shared.show(for: w, store: store) }
+        let custom = ActionItem(tr("自定义…", "Custom…")) { WorkspaceColorPicker.shared.show(for: w, store: store) }
         if !Workspace.tints.contains(where: { $0.color == w.tint }) { custom.image = swatch(w.tint); custom.state = .on }
         colors.addItem(custom)
         color.submenu = colors
         m.addItem(color)
-        if store.workspaces.count > 1 { m.addItem(ActionItem("删除…") { store.promptDeleteWorkspace(w) }) }
+        if store.workspaces.count > 1 { m.addItem(ActionItem(tr("删除…", "Delete…")) { store.promptDeleteWorkspace(w) }) }
         return m
     }
 

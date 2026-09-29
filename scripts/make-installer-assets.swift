@@ -42,12 +42,17 @@ for scale in [1, 2] as [CGFloat] {
     let data = png(NSSize(width: 600, height: 400), scale: scale) { size in
         color(0xF3F2EC).setFill(); NSRect(origin: .zero, size: size).fill()
         text("Seperate", font: serif, color: color(0x23241F), x: 32, top: 26, height: size.height)
-        text("在一个窗口里并排运行 Claude Code、Codex 和终端", font: .systemFont(ofSize: 12), color: color(0x6A6B63), x: 33, top: 62, height: size.height)
-        text("双击图标开始安装", font: .systemFont(ofSize: 14, weight: .medium), color: color(0x5B5A4A), centerX: 300, top: 292, height: size.height)
+        // One background for every language (a DMG can't switch it), so the words are in English and Chinese.
+        text("Run Claude Code, Codex and terminals side by side in one window", font: .systemFont(ofSize: 12), color: color(0x6A6B63), x: 33, top: 62, height: size.height)
+        text("在一个窗口里并排运行 Claude Code、Codex 和终端", font: .systemFont(ofSize: 12), color: color(0x8E8F86), x: 33, top: 80, height: size.height)
+        text("Double-click the icon to install", font: .systemFont(ofSize: 14, weight: .medium), color: color(0x5B5A4A), centerX: 300, top: 290, height: size.height)
+        text("双击图标开始安装", font: .systemFont(ofSize: 12.5), color: color(0x7A7968), centerX: 300, top: 310, height: size.height)
         guard unsigned else { return }
-        color(0xDCDBD2).setFill(); NSRect(x: 32, y: 56, width: 536, height: 1).fill()
-        text("首次打开被拦截？前往 系统设置 → 隐私与安全性，点“仍要打开”。", font: .systemFont(ofSize: 11),
-             color: color(0x8E8F86), centerX: 300, top: 356, height: size.height)
+        color(0xDCDBD2).setFill(); NSRect(x: 32, y: 64, width: 536, height: 1).fill()
+        text("Blocked the first time? Open System Settings → Privacy & Security and click “Open Anyway”.", font: .systemFont(ofSize: 10.5),
+             color: color(0x8E8F86), centerX: 300, top: 346, height: size.height)
+        text("首次打开被拦截？前往 系统设置 → 隐私与安全性，点“仍要打开”。", font: .systemFont(ofSize: 10.5),
+             color: color(0x8E8F86), centerX: 300, top: 364, height: size.height)
     }
     try data.write(to: out.appendingPathComponent("dmg-background\(suffix)\(scale == 1 ? "" : "@2x").png"))
 }

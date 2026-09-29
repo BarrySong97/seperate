@@ -31,6 +31,7 @@
 - `Core.shotsRoot`(环境变量 `SEPERATE_SHOTS_ROOT`):设置时 `scanSessions` / `agentProjects` 只返回这个目录下的结果,供官网截图模式使用
 
 ## 注意事项
+- **core 不产出界面文案**:没有标题的会话 `title` 为空串,由 Swift(`Core.untitled`)按界面语言补;返回给 UI 的错误尽量用英文或交给 Swift 兜底,见 [ADR-0006](../../decisions/0006-bilingual-ui.md)。
 - **内存所有权**:所有非 NULL 返回值都由 Rust `CString::into_raw` 分配,必须且只能用 `wb_free` 释放(不能用 `free`)。`wb_project_icon` 例外地返回**纯路径而非 JSON**,Swift 侧单独处理,别套 JSON 解码。
 - **三处必须同步**:新增/修改 `wb_*` 要同时改 `ffi.rs`、`workbench_core.h`、`Core.swift`,然后重跑 `scripts/build-core.sh` 重建 xcframework,否则 Swift 链接的是旧库。
 - **DBState 编码**:`Core.DBState` 用显式 `CodingKeys` + 普通 `JSONDecoder`,**不能**用 snake_case 键策略——它会把字典键(文件路径)也改写。其余调用用 `convertFromSnakeCase`。字段须与 `db::State` 一一对应;新增字段在 Rust 侧加 `#[serde(default)]`、Swift 侧给默认值以兼容。

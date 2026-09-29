@@ -12,7 +12,7 @@ final class TopBarView: NSView {
     static let height: CGFloat = 38
 
     private let store: Store
-    private let sidebarButton = IconButton(symbol: "sidebar.left", size: 13, tooltip: "切换侧栏 ⌘B", side: 26)
+    private let sidebarButton = IconButton(symbol: "sidebar.left", size: 13, tooltip: tr("切换侧栏 ⌘B", "Toggle Sidebar ⌘B"), side: 26)
     private let title = NSTextField.label(font: NSFont.systemFont(ofSize: 13, weight: .semibold))
     private let summary = NSTextField.label(font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
     private var presets: [NSButton] = []
@@ -29,7 +29,7 @@ final class TopBarView: NSView {
             let b = NSButton()
             b.isBordered = false
             b.imagePosition = .imageOnly
-            b.toolTip = p == .grid ? "2×2" : "\(p.paneCount) 栏"
+            b.toolTip = p == .grid ? "2×2" : tr("\(p.paneCount) 栏", "\(p.paneCount) panes")
             b.target = self
             b.action = #selector(applyPreset(_:))
             b.tag = LayoutPreset.allCases.firstIndex(of: p)!
@@ -45,7 +45,7 @@ final class TopBarView: NSView {
         updatePill.layer?.borderWidth = 1
         updatePill.layer?.backgroundColor = Theme.wait.withAlphaComponent(0.14).cgColor
         updatePill.layer?.borderColor = Theme.wait.withAlphaComponent(0.35).cgColor
-        updatePill.toolTip = "查看并安装更新"
+        updatePill.toolTip = tr("查看并安装更新", "View and install the update")
         updatePill.target = self
         updatePill.action = #selector(showUpdate(_:))
         updatePill.isHidden = true
@@ -74,9 +74,9 @@ final class TopBarView: NSView {
         let projects = Set(tabs.compactMap { store.session($0).flatMap(store.worktree(for:))?.projectID })
         let states = tabs.map { store.status(of: $0) }
         let count = { (st: SessionStatus) in states.filter { $0 == st }.count }
-        let text = NSMutableAttributedString(string: "\(panes.count) 栏 · \(tabs.count) 个 Tab · 来自 \(projects.count) 个项目",
+        let text = NSMutableAttributedString(string: tr("\(panes.count) 栏 · \(tabs.count) 个 Tab · 来自 \(projects.count) 个项目", "\(plural(panes.count, "pane")) · \(plural(tabs.count, "tab")) · from \(plural(projects.count, "project"))"),
                                              attributes: [.foregroundColor: Theme.muted, .font: NSFont.systemFont(ofSize: 12)])
-        for (st, label, color) in [(SessionStatus.waiting, "个需要你", Theme.wait), (.working, "个在运行", Theme.muted), (.done, "个完成未读", Theme.muted)] {
+        for (st, label, color) in [(SessionStatus.waiting, tr("个需要你", "waiting on you"), Theme.wait), (.working, tr("个在运行", "running"), Theme.muted), (.done, tr("个完成未读", "done, unread"), Theme.muted)] {
             let n = count(st)
             guard n > 0 else { continue }
             text.append(NSAttributedString(string: "  ·  ", attributes: [.foregroundColor: Theme.faint, .font: NSFont.systemFont(ofSize: 12)]))
@@ -97,7 +97,7 @@ final class TopBarView: NSView {
 
     private func refreshUpdatePill() {
         guard let version = Updater.shared.pendingVersion else { updatePill.isHidden = true; needsLayout = true; return }
-        updatePill.attributedTitle = NSAttributedString(string: "●  新版本 \(version)", attributes: [
+        updatePill.attributedTitle = NSAttributedString(string: tr("●  新版本 \(version)", "●  New version \(version)"), attributes: [
             .foregroundColor: Theme.wait, .font: NSFont.systemFont(ofSize: 11.5, weight: .semibold)])
         updatePill.isHidden = false
         needsLayout = true

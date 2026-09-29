@@ -17,6 +17,12 @@ let env = ProcessInfo.processInfo.environment
 let args = CommandLine.arguments
 guard args.count >= 2, let session = env["SEPERATE_SESSION_ID"] else { exit(0) }
 
+// The app's UI language (its own AppleLanguages, else the system's), so the texts written here match it.
+// This runs in the agent's process, so it reads the app's preferences domain instead of its own.
+let chinese = ((CFPreferencesCopyAppValue("AppleLanguages" as CFString, "dev.workbench.app" as CFString) as? [String])?.first
+    ?? Locale.preferredLanguages.first ?? "en").hasPrefix("zh")
+func tr(_ zh: String, _ en: String) -> String { chinese ? zh : en }
+
 func json(_ data: Data) -> [String: Any] { (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:] }
 
 /// Last text the assistant wrote, from the tail of a Claude transcript (.jsonl).
@@ -52,10 +58,10 @@ case "claude":
         let input = o["tool_input"] as? [String: Any] ?? [:]
         if tool == "AskUserQuestion" {
             let q = (input["questions"] as? [[String: Any]])?.first?["question"] as? String
-            message = q ?? input["question"] as? String ?? "有问题要问你"
+            message = q ?? input["question"] as? String ?? tr("有问题要问你", "Has a question for you")
         } else {
             let firstLine = (input["plan"] as? String)?.split(separator: "\n").first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-            message = "计划写好了，等你确认" + (firstLine.map { "：" + $0.trimmingCharacters(in: CharacterSet(charactersIn: "# ")) } ?? "")
+            message = tr("计划写好了，等你确认", "The plan is ready for your review") + (firstLine.map { tr("：", ": ") + $0.trimmingCharacters(in: CharacterSet(charactersIn: "# ")) } ?? "")
         }
     } else if event == "PermissionRequest", let tool = o["tool_name"] as? String {
         // "Bash: pnpm test", "Edit: src/app.ts" — what the agent wants to do.

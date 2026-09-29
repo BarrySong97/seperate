@@ -7,6 +7,7 @@
 ## 文件清单与关系
 - `Sources/Workbench/App/main.swift` — 进程入口,创建 `NSApplication` + `AppDelegate` 并 `run()`
 - `Sources/Workbench/App/AppDelegate.swift` — 启动顺序、菜单栏、菜单项校验、Ghostty 动作 → 布局映射、DEBUG 演示钩子
+- `Sources/Workbench/App/L10n.swift` — 界面语言:`tr("中文", "English")`、`plural(n, "tab")`、「语言」菜单的读写(app 域的 `AppleLanguages`)
 - `Sources/Workbench/App/ShotRenderer.swift` — 官网截图模式(仅 DEBUG):`--render-shots <目录>` 时由 `main.swift` 进入,不走 `AppDelegate`,用演示项目搭出真实窗口并渲染成 PNG
 - `Sources/Workbench/App/Updater.swift` — Sparkle 封装(单例 `Updater.shared`),后台检查结果以顶栏药丸呈现
 - 调用关系:`main → AppDelegate → GhosttyRuntime.start / MainWindowController / Store.refresh / Updater.start`;菜单 action → `Store`;`Updater → Sparkle → GitHub Release 上的 appcast.xml`
@@ -23,6 +24,7 @@
 - 菜单 selector(`@objc` 方法)是菜单栏与 `Store` 之间的唯一胶水;编辑菜单直接指向 `TerminalView.copy/paste` 走响应链
 
 ## 注意事项
+- **语言启动时定死**:`L10n.isChinese` 只在启动时算一次;「语言」菜单(Seperate 菜单里)只保存设置,换语言时提示重启,「现在重启」会等本进程退出后 `open` 自己。见 [ADR-0006](../../decisions/0006-bilingual-ui.md)。
 - **单窗口应用**:Ghostty 的 `NEW_WINDOW` / `TOGGLE_FULLSCREEN` / `CLOSE_WINDOW` 被吞掉(返回 true),不要改成交给 Ghostty 处理,否则会冒出 Ghostty 自己的窗口逻辑。`GOTO_TAB` 在这里语义是"聚焦第 N 栏",不是 Tab。
 - **快捷键冲突**:⌘K / ⌘P 在菜单里是命令面板;`TerminalView.performKeyEquivalent` 专门放行这两个(Ghostty 默认 ⌘K 是清屏)。新增菜单快捷键时要检查是否被终端绑定抢走。
 - **全部 `@MainActor`**:`AppDelegate`、`Updater` 都是主线程类型;Sparkle 的 delegate 回调声明为 `nonisolated`,内部用 `MainActor.assumeIsolated` 回主线程——前提是 Sparkle 在主线程回调,别在这里引入后台队列。

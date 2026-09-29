@@ -340,7 +340,7 @@ final class PaneView: NSView {
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
         let isPane = draggedPane(from: sender) != nil
         guard isPane || sessionID(from: sender) != nil else { hideOverlay(); return [] }
-        showOverlay(zone(at: convert(sender.draggingLocation, from: nil)), centerLabel: isPane ? "交换位置" : "加为 Tab")
+        showOverlay(zone(at: convert(sender.draggingLocation, from: nil)), centerLabel: isPane ? tr("交换位置", "Swap") : tr("加为 Tab", "Add as tab"))
         return .move
     }
 
@@ -381,7 +381,7 @@ final class PaneView: NSView {
             case .top: r = NSRect(x: b.minX, y: b.minY, width: b.width, height: b.height / 2)
             case .bottom: r = NSRect(x: b.minX, y: b.midY, width: b.width, height: b.height / 2)
             }
-            dropOverlay?.set(rect: r, label: ["放到左侧", "放到右侧", "放到上方", "放到下方"][[DropEdge.left, .right, .top, .bottom].firstIndex(of: e)!])
+            dropOverlay?.set(rect: r, label: [tr("放到左侧", "Put on the left"), tr("放到右侧", "Put on the right"), tr("放到上方", "Put above"), tr("放到下方", "Put below")][[DropEdge.left, .right, .top, .bottom].firstIndex(of: e)!])
         }
     }
 
@@ -416,8 +416,8 @@ final class DropOverlay: NSView {
 final class EmptyPaneView: NSView {
     private let store: Store
     private let paneID: String
-    private let heading = NSTextField.label("放一个 Session 进来", font: NSFont.systemFont(ofSize: 13, weight: .semibold))
-    private let hint = NSTextField.label("从左侧拖进来，或者选一个：", font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
+    private let heading = NSTextField.label(tr("放一个 Session 进来", "Put a session here"), font: NSFont.systemFont(ofSize: 13, weight: .semibold))
+    private let hint = NSTextField.label(tr("从左侧拖进来，或者选一个：", "Drag one in from the left, or pick one:"), font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
     private let list = NSView()
     private var rows: [PickRow] = []
 

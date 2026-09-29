@@ -14,7 +14,7 @@
 - **DB 迁移只追加**:`core/src/db.rs` 的 `MIGRATIONS` 按 `PRAGMA user_version`,已发布的条目不得修改/重排;持久化的 Codable 字段名、枚举 raw value 不得随意改名(会丢用户数据)
 - **`Store` 只在主线程改,且每次改动都要 `notify(<最窄的 Change>)`**(保存由 notify 触发);布局只经 `store.mutateLayout {}` 修改 — 见 [model](docs/modules/model/README.md)
 - **libghostty 调用全在主线程**;不在 Ghostty 回调里释放 surface;surface 等视图进窗口且 ≥40×40 再创建 — 见 [terminal](docs/modules/terminal/README.md)
-- **UI**:纯 AppKit、仅深色;颜色/字体只用 `Theme.*`(改主色同步 `Theme.ghosttyConfig`);`TerminalView` 归 `Store` 所有,UI 只挪不建;新全局快捷键若与终端冲突要在 `TerminalView.performKeyEquivalent` 放行;UI 文案用简体中文 — 见 [ui](docs/modules/ui/README.md)、[design.md](design.md)
+- **UI**:纯 AppKit、仅深色;颜色/字体只用 `Theme.*`(改主色同步 `Theme.ghosttyConfig`);`TerminalView` 归 `Store` 所有,UI 只挪不建;新全局快捷键若与终端冲突要在 `TerminalView.performKeyEquivalent` 放行;UI 文案一律 `tr("中文", "English")` 两种语言都写(`L10nTests` 拦截,见 [ADR-0006](docs/decisions/0006-bilingual-ui.md))— 见 [ui](docs/modules/ui/README.md)、[design.md](design.md)
 - **测试不碰真实用户数据**:`Store()` 之前先 `useTempDataDir()`
 - **不做全仓格式化**(`cargo fmt` / swift-format 会重排现有文件);更新检查只在启动时和手动触发 — [ADR-0003](docs/decisions/0003-sparkle-update-checks.md)
 
