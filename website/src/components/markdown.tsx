@@ -1,5 +1,6 @@
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ChangelogMock } from "@/components/changelog-mocks";
 import { VideoPlayer } from "@/components/video-player";
 import { ZoomImage } from "@/components/zoom-image";
 
@@ -51,13 +52,21 @@ const components: Components = {
     <code className="rounded border border-line bg-panel px-1.5 py-px font-mono text-[0.875em] text-text">{children}</code>
   ),
   strong: ({ children }) => <strong className="font-semibold text-text">{children}</strong>,
-  img: ({ src, alt, title }) => (typeof src === "string" ? <Media src={src} alt={alt} caption={alt || undefined} {...fromTitle(title)} /> : null),
+  img: ({ src, alt, title }) => {
+    if (typeof src !== "string") return null;
+    // `![caption](mock:tab-menu)`: a drawing of the app's UI from changelog-mocks.tsx.
+    if (src.startsWith("mock:")) return <ChangelogMock name={src.slice(5)} caption={alt || undefined} />;
+    return <Media src={src} alt={alt} caption={alt || undefined} {...fromTitle(title)} />;
+  },
 };
+
+// Keep `mock:` sources; everything else gets react-markdown's usual URL sanitizing.
+const urlTransform = (url: string) => (url.startsWith("mock:") ? url : defaultUrlTransform(url));
 
 export function Markdown({ children }: { children: string }) {
   return (
     <div className="flex flex-col gap-4">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} urlTransform={urlTransform}>
         {children}
       </ReactMarkdown>
     </div>

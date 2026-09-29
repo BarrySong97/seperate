@@ -2,16 +2,17 @@
  * The homepage features: three tall cards, each a grainy gradient with one piece of Seperate's UI
  * rebuilt in HTML on top (the sidebar's worktrees, split panes, the inbox). Colors, type and layout
  * follow the app (Sources/Workbench/UI, Theme.swift); names in them are examples, terminals are skeletons.
+ * The backdrop and the small UI pieces are shared with the changelog's mocks (changelog-mocks.tsx).
  */
 
 // Film grain: SVG turbulence noise as a tiling data URI. `tone` is the grain's color (white lifts the
 // light areas, black digs into the dark ones); both layers together read as frosted, grainy print.
-const grain = (tone: string, alpha: number) =>
+export const grain = (tone: string, alpha: number) =>
   `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 ${tone} 0 0 0 0 ${tone} 0 0 0 0 ${tone} 0 0 0 ${alpha} 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
 // Faint rings around the centre, as in a lens.
-const rings = "repeating-radial-gradient(circle at 50% 52%, transparent 0 88px, rgb(255 255 255 / 0.07) 88px 89px)";
+export const rings = "repeating-radial-gradient(circle at 50% 52%, transparent 0 88px, rgb(255 255 255 / 0.07) 88px 89px)";
 
-const backdrops = {
+export const backdrops = {
   // Codex blue into a pale haze.
   blue: "radial-gradient(70% 55% at 25% 20%, #b9c8f2 0%, transparent 60%), radial-gradient(60% 60% at 80% 85%, #3c4f9c 0%, transparent 70%), radial-gradient(55% 45% at 20% 75%, #d99b86 0%, transparent 65%), linear-gradient(160deg, #8fa6e6 0%, #5c73c9 55%, #2d3a73 100%)",
   // Green with a streak of light.
@@ -39,23 +40,23 @@ function Card({ backdrop, title, body, children }: { backdrop: keyof typeof back
 
 /* ——— Pieces of the app's UI ——— */
 
-const ui = "font-sans text-[12px] leading-none text-[#e8e8e2] antialiased";
-const surface = "rounded-[12px] border border-[#42433c] bg-[#22231e] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.55)]";
+export const ui = "font-sans text-[12px] leading-none text-[#e8e8e2] antialiased";
+export const surface = "rounded-[12px] border border-[#42433c] bg-[#22231e] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.55)]";
 
-function ClaudeIcon() {
+export function ClaudeIcon() {
   return <span className="w-3 shrink-0 text-center text-[13px] leading-none text-[#e8916c]">✱</span>;
 }
-function CodexIcon() {
+export function CodexIcon() {
   return <span className="w-3 shrink-0 text-center font-mono text-[9px] leading-none font-semibold text-[#c9c9c2]">&gt;_</span>;
 }
-function Chevron({ open = true }: { open?: boolean }) {
+export function Chevron({ open = true }: { open?: boolean }) {
   return (
     <svg className={`size-2.5 shrink-0 text-[#6d6e67] ${open ? "" : "-rotate-90"}`} viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
       <path d="M2.5 3.8 5 6.3l2.5-2.5" />
     </svg>
   );
 }
-function Badge({ letter, color }: { letter: string; color: string }) {
+export function Badge({ letter, color }: { letter: string; color: string }) {
   return (
     <span className="flex size-4 shrink-0 items-center justify-center rounded-[4px] text-[9px] font-semibold text-[#e8e8e2]" style={{ background: color }}>
       {letter}
@@ -65,7 +66,7 @@ function Badge({ letter, color }: { letter: string; color: string }) {
 function Spinner() {
   return <span className="size-2 shrink-0 rounded-full border-[1.5px] border-[#9ccf6c] border-t-transparent" />;
 }
-function Dot({ color }: { color: string }) {
+export function Dot({ color }: { color: string }) {
   return <span className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />;
 }
 function Bell({ count }: { count: number }) {

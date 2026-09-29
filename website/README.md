@@ -58,7 +58,8 @@ The changelog is for people who use Seperate, not for people who read its code.
 - **`#### 修复`** for bugs, written as before → after from the user's side: "拖动进度条时滑块会跳回去；现在可以正常拖动".
 - **Patch notes** (`patches[].notes`) follow the same rules in one or two sentences.
 - Leave out internal work nobody can see: refactors, tests, build scripts, CI, docs, dependency bumps.
-- Only real screenshots and recordings; no placeholder images.
+- Only real screenshots and recordings, or a drawn mock of the app's UI; no placeholder images.
+- **Mocks**: `![caption](mock:<name>)` draws a piece of the app's UI in HTML (`src/components/changelog-mocks.tsx`, same style as the homepage feature cards). Add a new `<name>` there for a new feature; copy menu titles and order from `Sources/Workbench/UI/Menus.swift`.
 
 ## Uploading media to R2
 
