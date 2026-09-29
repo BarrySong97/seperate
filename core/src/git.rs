@@ -246,8 +246,11 @@ pub fn project_create(dir: &Path, init: bool) -> Result<(), String> {
 mod tests {
     use super::*;
 
+    /// A fresh folder per call: tests run in parallel, so a shared one got wiped under a running test.
     fn temp() -> PathBuf {
-        let d = std::env::temp_dir().join(format!("wbcore-{}", std::process::id()));
+        static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let d = std::env::temp_dir().join(format!("wbcore-{}-{n}", std::process::id()));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d
