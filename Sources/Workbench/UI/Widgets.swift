@@ -222,7 +222,7 @@ final class ChipView: NSView {
         NSBezierPath(roundedRect: bounds, xRadius: side * 0.28, yRadius: side * 0.28).fill()
         let letter = String(name.prefix(1)).uppercased() as NSString
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedSystemFont(ofSize: side * 0.55, weight: .semibold),
+            .font: Theme.font(side * 0.55, .semibold, mono: true),
             .foregroundColor: NSColor(hue: hue, saturation: 0.22, brightness: 0.82, alpha: 1)]
         let sz = letter.size(withAttributes: attrs)
         letter.draw(at: NSPoint(x: (side - sz.width) / 2, y: (side - sz.height) / 2), withAttributes: attrs)

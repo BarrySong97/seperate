@@ -80,7 +80,9 @@ final class WorkspaceView: NSView {
 
     func focusActiveTerminal() {
         guard let p = store.layout.focusedPane, let sid = p.active, let t = store.terminals[sid] else { return }
-        window?.makeFirstResponder(t)
+        // Mid workspace switch the terminal is not re-parented yet; the rebuild focuses it later.
+        guard let window, t.window === window else { return }
+        window.makeFirstResponder(t)
     }
 
     private func build(_ node: LayoutNode) -> NSView {
@@ -402,7 +404,7 @@ final class DropOverlay: NSView {
         let path = NSBezierPath(roundedRect: target, xRadius: 8, yRadius: 8)
         Theme.accent.withAlphaComponent(0.12).setFill(); path.fill()
         Theme.accent.setStroke(); path.lineWidth = 2; path.stroke()
-        let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: Theme.accent]
+        let attrs: [NSAttributedString.Key: Any] = [.font: Theme.font(12, .semibold), .foregroundColor: Theme.accent]
         let s = NSAttributedString(string: label, attributes: attrs)
         let size = s.size()
         s.draw(at: NSPoint(x: target.midX - size.width / 2, y: target.midY - size.height / 2))

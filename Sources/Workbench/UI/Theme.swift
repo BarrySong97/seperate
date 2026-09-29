@@ -1,4 +1,4 @@
-// @purpose "Bone" palette: the app's color, font tokens and the Ghostty terminal color overrides.
+// @purpose "Bone" palette: the app's color, font tokens (cached draw fonts) and the Ghostty terminal color overrides.
 // @role    Read by every UI view; ghosttyConfig is layered over the user's Ghostty config by the terminal runtime.
 // @deps    AppKit (NSColor, NSFont).
 // @gotcha  Dark-only (window forces darkAqua); selection is by lightness, not a hue accent. Keep
@@ -30,6 +30,18 @@ enum Theme {
     static let danger = NSColor(hex: 0xF08A80)
     static let smallFont = NSFont.systemFont(ofSize: 11.5)
     static let monoFont = NSFont.monospacedSystemFont(ofSize: 10.5, weight: .regular)
+
+    /// Fonts for `draw(_:)` code, created once and kept for the process lifetime. A system font
+    /// made per draw and dropped can come back nil despite its nonnull signature, and measuring
+    /// text with it throws in CoreText (crashed on notification click / workspace switch).
+    @MainActor static func font(_ size: CGFloat, _ weight: NSFont.Weight, mono: Bool = false) -> NSFont {
+        let key = "\(size)|\(weight.rawValue)|\(mono)"
+        if let f = fontCache[key] { return f }
+        let f = mono ? NSFont.monospacedSystemFont(ofSize: size, weight: weight) : NSFont.systemFont(ofSize: size, weight: weight)
+        fontCache[key] = f
+        return f
+    }
+    @MainActor private static var fontCache: [String: NSFont] = [:]
 
     /// Terminal colors layered over the user's own Ghostty config.
     static let ghosttyConfig = """

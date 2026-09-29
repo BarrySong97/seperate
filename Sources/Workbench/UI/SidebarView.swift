@@ -656,7 +656,7 @@ final class BellBadge: NSView {
             Theme.ground.setFill(); NSBezierPath(ovalIn: NSRect(x: 2, y: 3, width: 9, height: 9)).fill()
             Theme.accent.setFill(); NSBezierPath(ovalIn: NSRect(x: 3.5, y: 4.5, width: 6, height: 6)).fill()
         case .count(let n):
-            let text = NSAttributedString(string: n > 9 ? "9+" : "\(n)", attributes: [.font: NSFont.systemFont(ofSize: 9, weight: .bold), .foregroundColor: Theme.ground])
+            let text = NSAttributedString(string: n > 9 ? "9+" : "\(n)", attributes: [.font: Theme.font(9, .bold), .foregroundColor: Theme.ground])
             let w = max(14, text.size().width + 7)
             let r = NSRect(x: 0, y: 0, width: w, height: 13)
             Theme.ground.setFill(); NSBezierPath(roundedRect: r.insetBy(dx: -1, dy: -1), xRadius: 7.5, yRadius: 7.5).fill()
@@ -809,7 +809,7 @@ final class WorkspaceButton: NSView {
         let tint = NSColor(hex: w.tint)
         if active { tint.withAlphaComponent(0.22).setFill(); NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6).fill() }
         else if hovering { Theme.hover.setFill(); NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6).fill() }
-        let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 10.5, weight: .semibold),
+        let attrs: [NSAttributedString.Key: Any] = [.font: Theme.font(10.5, .semibold),
                                                     .foregroundColor: active ? tint.blended(withFraction: 0.35, of: .white) ?? tint : Theme.muted]
         let s = NSAttributedString(string: w.icon, attributes: attrs)
         let sz = s.size()

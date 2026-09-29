@@ -60,6 +60,8 @@
   - 命令面板用 `NSEvent.addLocalMonitorForEvents` 捕获 ⌘1–9，`close()` 必须移除 monitor。
 - **快捷键表在 `AppDelegate.makeMenu()`**：⌘K/⌘P 面板、⌘T 新终端 Tab、⌘N 新建项目、⌘O 添加项目、⌥⌘O 用默认编辑器打开、⌘I 收件箱、⇧⌘R 重扫会话、⌘W 关 Tab、⌘B 侧栏、⌘D / ⇧⌘D 分屏、⌃⌘1–4 布局预设、⌘1–9 聚焦第 N 栏、⇧⌘N 新 Workspace、⌃] / ⌃[ 与 ⌃1–9 切 Workspace。改快捷键时同步 tooltip 文案（如「向右分屏 ⌘D」「收件箱 ⌘I」）。
 - **Theme token**：颜色/字体一律取 `Theme.*`，不要写死十六进制；窗口强制 `darkAqua`，没有浅色模式。改 `pane` / `selBG` / `selFG` / `accent` 时同步 `Theme.ghosttyConfig`。选中态靠明度（`selBG`/`selFG`），不用色相强调色。
+- **`draw(_:)` 里不新建字体**：用 `Theme.font(size, weight, mono:)`（进程内缓存）。每次 draw 新建再丢弃的系统字体偶尔返回 nil（签名却是 nonnull），CoreText 量字时抛异常直接崩（曾在点通知 / 切 Workspace 时崩在 `ChipView`）；`DrawFontTests` 会拦截。
+- **聚焦终端前确认它已在本窗口**：切 Workspace 有 0.12s 淡出，重建前终端还没挂上；`focusActiveTerminal` 只在 `t.window === window` 时设 first responder，重建完成后再聚焦。
 - **动效**：统一用 `SidebarView.motion`（0.28s，曲线 0.2,0.8,0.2,1）；`DotView` 在「减少动态效果」开启时不转不闪。裸 CALayer 改 frame 会隐式动画，需要时 `CATransaction.setDisableActions(true)`。
 - **标题栏区域**：窗口 `fullSizeContentView` + 透明标题栏；顶栏和侧栏顶部 38pt 自己处理 `handleTitlebarMouseDown`（拖动 / 双击按系统设置缩放）。侧栏隐藏时顶栏左侧留 78pt 给红绿灯。
 - **中文 UI**：所有用户可见文案（菜单、tooltip、对话框、相对时间）是简体中文；「Session / Tab / Worktree / Workspace」等术语保留英文。代码注释是英文。
