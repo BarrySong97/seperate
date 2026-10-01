@@ -85,6 +85,35 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(s.layout.panes[0].tabs, [])
     }
 
+    /// Clicking an inbox row goes to the session: its workspace, its pane, its tab.
+    @MainActor func testInboxOpensTheSessionWhereItLives() {
+        let s = Store()
+        let home = s.activeID
+        s.mutateLayout { l in ["a1", "a2"].forEach { l.open($0) } }
+        s.addWorkspace(name: "个人")
+        s.mutateLayout { $0.open("b1") }
+        s.openFromInbox("a1")
+        XCTAssertEqual(s.activeID, home, "switches to the workspace whose pane holds it")
+        XCTAssertEqual(s.layout.focusedPane?.active, "a1", "and shows its tab")
+    }
+
+    /// A session with no tab anywhere opens in the workspace that holds its project, not the current one.
+    @MainActor func testInboxOpensAClosedSessionInItsProjectsWorkspace() {
+        let s = Store()
+        let home = s.activeID
+        let p = folders(1)[0]
+        s.addProject(path: p)
+        let wt = s.worktrees(of: s.project(p)!)[0]
+        s.newSession(.shell, in: wt)
+        let id = s.layout.focusedPane!.active!
+        s.mutateLayout { $0.detach(id) }
+        s.addWorkspace(name: "个人")
+        s.openFromInbox(id)
+        XCTAssertEqual(s.activeID, home)
+        XCTAssertEqual(s.layout.focusedPane?.active, id)
+        XCTAssertNil(s.workspaces.first { $0.id != home }?.layout.pane(containing: id))
+    }
+
     @MainActor func testOrderColorAndPinsPersist() {
         let s = Store()
         let f = folders(3)

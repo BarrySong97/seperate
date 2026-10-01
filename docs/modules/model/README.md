@@ -23,7 +23,7 @@
 ## 对外接口
 - 观察:`observe(_:) -> UUID` / `unobserve`,回调收到 `Store.Change`:`.projects`、`.session(id)`、`.layout(structure:)`、`.workspace`、`.reveal(id)`、`.sidebar`。
 - 查询:`session(_:)`、`status(of:)`、`phaseMessage(of:)`、`sessions(in:)`、`inboxItems()`、`waitingIDs`、`layout`、`visibleProjects` 等。
-- 操作:打开/新建/结束会话(`closeTab` 单个,经 Ghostty 确认;`closeTabs` 批量,有进程在跑只弹一次确认)、`mutateLayout`、工作区增删改、项目与 worktree 管理、`markInboxRead`、`openFromInbox`。
+- 操作:打开/新建/结束会话(`closeTab` 单个,经 Ghostty 确认;`closeTabs` 批量,有进程在跑只弹一次确认)、`mutateLayout`、工作区增删改、项目与 worktree 管理、`markInboxRead`、`openFromInbox`。点收件箱行和系统通知都走 `goTo(id)`:会话开在某个 Workspace 的栏里就切过去并激活那个 Tab;没开着就切到**它项目所在的** Workspace 再打开,而不是开在当前 Workspace。
 - 由 UI 安装的回调:`inboxHandler`、`paletteHandler`、`importHandler`。
 - 静态:`Store.dataDir`、`dbURL`、`legacyURL`(测试用)。
 - 仅截图模式:`shotsSetPhase(_:_:need:)` 直接摆出收件箱状态(平时由 agent hook 驱动)。

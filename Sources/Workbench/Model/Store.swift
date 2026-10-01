@@ -82,7 +82,7 @@ final class Store {
         notifier.onOpen = { [weak self] id in
             NSApp.activate(ignoringOtherApps: true)
             guard let self else { return }
-            if self.workspaceContaining(id) != nil { self.reveal(id) } else { self.open(id) }
+            self.goTo(id)
         }
     }
 
@@ -624,13 +624,22 @@ final class Store {
 
     /// Jump from the inbox: its workspace, its tab (opening one if needed), and it counts as read.
     func openFromInbox(_ id: String) {
-        if workspaceContaining(id) != nil { reveal(id) } else { open(id) }
+        goTo(id)
         markSeen()
     }
 
     static func duration(_ t: TimeInterval) -> String {
         let s = Int(t)
         return s >= 60 ? tr("\(s / 60)分\(s % 60)秒", "\(s / 60)m \(s % 60)s") : tr("\(s)秒", "\(s)s")
+    }
+
+    /// Takes the user to a session (inbox row, notification click): the workspace and pane holding its tab,
+    /// or else a new tab in the workspace that holds its project — not whichever workspace happens to be open.
+    func goTo(_ id: String) {
+        if workspaceContaining(id) != nil { reveal(id); return }
+        if let root = session(id).flatMap(worktree(for:))?.projectID,
+           let w = workspaces.first(where: { $0.projectRoots.contains(root) }) { switchWorkspace(to: w.id) }
+        open(id)
     }
 
     /// Jump to a session waiting in another workspace.
