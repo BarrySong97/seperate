@@ -3,7 +3,9 @@
 //          calls store.openFromInbox / markInboxRead.
 // @deps    AppKit (NSPopover), Store (inbox model), Widgets, RelativeTime.
 // @gotcha  Subscribes to Store only while open and unobserves in popoverDidClose; opening a row counts
-//          as read. See docs/modules/ui/README.md
+//          as read. The store changes many times a second while agents run: rows are rebuilt only when
+//          what they show changes, and act on mouse-down (a rebuild between press and release ate
+//          mouse-up clicks). See docs/modules/ui/README.md
 
 import AppKit
 
@@ -38,7 +40,7 @@ final class InboxPopover: NSObject, NSPopoverDelegate {
 
     func toggle(from anchor: NSView) {
         if popover.isShown { popover.performClose(nil); return }
-        content.reload()
+        content.reload(fresh: true)   // fresh rows: no hover left over from last time
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
         token = store.observe { [weak self] _ in self?.content.reload() }
     }
@@ -65,6 +67,7 @@ private final class InboxView: NSView {
     var onResize: ((NSSize) -> Void)?
     private let store: Store
     private var filter = 0            // 0 all, 1 needs, 2 review, 3 working
+    private var shownKey = ""         // what the rows show; unchanged → rows are kept (see reload)
     private let title = NSTextField.label(tr("收件箱", "Inbox"), font: NSFont.systemFont(ofSize: 14, weight: .semibold))
     private let summary = NSTextField.label(font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
     private let readAll = NSButton(title: tr("全部标为已读", "Mark All as Read"), target: nil, action: nil)
@@ -99,7 +102,8 @@ private final class InboxView: NSView {
     @objc private func markRead() { store.markInboxRead() }
     @objc private func filterChanged() { filter = tabs.selectedSegment; reload() }
 
-    func reload() {
+    func reload(fresh: Bool = false) {
+        if fresh { shownKey = "" }
         let all = store.inboxItems()
         let needs = all.filter { $0.group == .needs }, review = all.filter { $0.group == .review }, working = all.filter { $0.group == .working }
         summary.stringValue = needs.isEmpty ? (review.isEmpty ? tr("都处理完了", "All caught up") : tr("\(review.count) 个待查看", "\(review.count) to review"))
@@ -116,6 +120,13 @@ private final class InboxView: NSView {
         case 3: shown = working
         default: shown = all
         }
+        // The store changes many times a second while agents run (spinner titles); rebuilding the rows each
+        // time made them flicker and drop hover. Only rebuild when what they show changed.
+        let key = "\(filter)|\(working.count)|" + shown.map {
+            "\($0.id)|\($0.label)|\($0.title)|\($0.place)|\($0.message)|\($0.group)|\(RelativeTime.short($0.since))"
+        }.joined(separator: "\n")
+        guard key != shownKey else { return }
+        shownKey = key
         list.subviews.forEach { $0.removeFromSuperview() }
         var y: CGFloat = 4
         var lastGroup: InboxItem.Group?
@@ -248,6 +259,8 @@ private final class InboxRow: NSView {
     }
     override func mouseEntered(with event: NSEvent) { hovering = true; layer?.backgroundColor = Theme.selBG.cgColor }
     override func mouseExited(with event: NSEvent) { hovering = false; layer?.backgroundColor = nil }
-    override func mouseDown(with event: NSEvent) {}
-    override func mouseUp(with event: NSEvent) { if bounds.contains(convert(event.locationInWindow, from: nil)) { onClick?() } }
+    // The whole row takes the click (not its labels), and acts on mouse-down: acting on mouse-up lost the
+    // click whenever the list was rebuilt between press and release, so nothing happened.
+    override func hitTest(_ point: NSPoint) -> NSView? { frame.contains(point) ? self : nil }
+    override func mouseDown(with event: NSEvent) { onClick?() }
 }
