@@ -130,4 +130,16 @@ final class AgentHooksTests: XCTestCase {
         while !FileManager.default.fileExists(atPath: chainOut), Date() < deadline { RunLoop.main.run(until: Date().addingTimeInterval(0.05)) }
         XCTAssertEqual(try? String(contentsOfFile: chainOut, encoding: .utf8).hasPrefix("turn-ended {"), true, "the user's own notify still runs")
     }
+
+    /// Codex's TUI notifications: questions and plans need the user just like approvals (Claude gets these from hooks).
+    func testCodexNotificationsThatNeedYou() {
+        func need(_ t: String) -> String? { Store.codexNeed(t).map { "\($0.0)|\($0.1)" } }
+        XCTAssertEqual(need("Question: Which database should I use?"), "question|Which database should I use?")
+        XCTAssertEqual(need("Plan mode prompt: Ship the migration first?"), "plan|Ship the migration first?")
+        XCTAssertEqual(need("Approval requested: cargo test"), "permission|Approval requested: cargo test")
+        XCTAssertEqual(need("Approval requested by reviewer"), "permission|Approval requested by reviewer")
+        XCTAssertEqual(need("Codex wants to edit src/app.ts"), "permission|Codex wants to edit src/app.ts")
+        XCTAssertNil(need("Agent turn complete"))
+        XCTAssertNil(need("I asked for approval earlier and it worked"), "a finished turn's text is not a request")
+    }
 }

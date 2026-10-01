@@ -13,7 +13,7 @@ import Foundation
 ///   claude → `claude --settings <our hooks file>`: UserPromptSubmit / PostToolUse = working,
 ///            PermissionRequest / Notification (permission) = needs you, Stop = done, SessionEnd = ended.
 ///   codex  → `codex -c notify=[seperate-hook]` (turn complete = done) plus Codex's own terminal
-///            notifications, always on, which carry "Approval requested" (= needs you).
+///            notifications, always on, which carry approvals, plan prompts and questions (= needs you; Store.codexNeed).
 /// Every hook runs `seperate-hook`, which forwards the event to the app (see Sources/SeperateHook).
 enum AgentHooks {
     static let eventName = Notification.Name("dev.seperate.agent-event")

@@ -483,10 +483,26 @@ final class Store {
         switch s.kind {
         case .shell: flagAttention(id)
         case .codex:
-            // Codex writes "Approval requested: <command>" (a finished turn's text could mention approval too).
-            if let t = [title, body].first(where: { $0.hasPrefix("Approval requested") }) { needKind[id] = .permission; setPhase(id, .needsInput(t)) }
+            // Codex's own TUI notifications (a finished turn's text is ignored: it could mention approval too).
+            guard let (need, message) = [title, body].lazy.compactMap(Self.codexNeed).first else { return }
+            if case .needsInput = phase[id], needKind[id] != .permission, need == .permission { return }   // keep the better label
+            needKind[id] = need
+            setPhase(id, .needsInput(message))
         case .claude: break   // hooks say it better
         }
+    }
+
+    /// What a Codex TUI notification asks of the user, and the words to show. Codex 0.157 sends these for
+    /// approval-requested ("Approval requested: …", "Approval requested by …", "Codex wants to edit …"),
+    /// plan-mode-prompt ("Plan mode prompt: …") and async-question ("Question: …", its request_user_input).
+    nonisolated static func codexNeed(_ text: String) -> (NeedKind, String)? {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.hasPrefix("Approval requested") || t.hasPrefix("Codex wants to edit") { return (.permission, t) }
+        for (prefix, need) in [("Plan mode prompt:", NeedKind.plan), ("Question:", .question)] where t.hasPrefix(prefix) {
+            let rest = t.dropFirst(prefix.count).trimmingCharacters(in: .whitespaces)
+            return (need, rest.isEmpty ? t : rest)
+        }
+        return nil
     }
 
     private func userTyped(_ id: String, isReturn: Bool) {
@@ -546,7 +562,12 @@ final class Store {
             switch new {
             case .needsInput(let m):
                 Self.log.info("notify needs-input session=\(id, privacy: .public)")
-                notifier.post(session: id, title: who, subtitle: tr("需要你确认", "Needs your approval"), body: m ?? title(of: s), sound: true)
+                let subtitle = switch needKind[id] {
+                case .question: tr("有问题要问你", "Has a question for you")
+                case .plan: tr("计划写好了，等你确认", "The plan is ready for your review")
+                default: tr("需要你确认", "Needs your approval")
+                }
+                notifier.post(session: id, title: who, subtitle: subtitle, body: m ?? title(of: s), sound: true)
             case .failed(let code):
                 notifier.post(session: id, title: who, subtitle: tr("出错了 · 退出码 \(code)", "Failed · exit code \(code)"), body: title(of: s), sound: true)
             case .done(let m):

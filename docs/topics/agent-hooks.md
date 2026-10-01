@@ -25,11 +25,11 @@ Seperate 在侧栏、Inbox、Dock 角标和系统通知里显示每个 Agent 会
    - `Notification` → `needsInput`(忽略 `idle_prompt` 及"waiting for your input"空闲提醒)
    - `Stop` → `done(最后一句话)`;`SessionEnd` → 清除阶段
 5. **其他信号补位**:
-   - Codex 的 OSC 终端通知以 "Approval requested" 开头 → `needsInput(permission)`;Claude 的终端通知忽略(hook 更准);Shell 的通知/响铃 → `attention`(bell)。
+   - Codex 的 OSC 终端通知(`Store.codexNeed`):"Approval requested…" / "Codex wants to edit…" → `needsInput(permission)`;"Plan mode prompt: …" → `needsInput(plan)`;"Question: …"(Codex 的 `request_user_input` 提问)→ `needsInput(question)`。Codex 的 `notify` 只报回合结束,提问和审批只能靠这些终端通知。Claude 的终端通知忽略(hook 更准);Shell 的通知/响铃 → `attention`(bell)。
    - 用户在 `needsInput` 时打字 → 回到 `working`;Codex 没有"提交 prompt"hook,在其提示符按回车即视为开始新一轮。
    - Agent 命令退出:非 0 且不是 130(^C)→ `failed(code)`,否则清除。
 6. **会话 id 认领**:hook 不带会话 id。新建 Agent 的 resume id 由定时 `refresh()` 扫描 `sessions.rs` 结果后 `adoptAgentIDs()` 按 kind + cwd + 时间匹配得到。
-7. **展示**:`setPhase` 更新 `phase` / `phaseSince`,刷新 Dock 角标(`waitingIDs` 数量),对用户**看不到**的会话发系统通知(需要确认、出错、以及耗时 ≥30 秒的完成),然后 `resort` 让等待中的会话在侧栏上浮并 `notify`。Inbox 按 needs / review / working 分组;以问号结尾的完成消息归入 needs(视为在提问)。点击通知 → `Notifier.onOpen` → 切到对应工作区/打开 tab。
+7. **展示**:`setPhase` 更新 `phase` / `phaseSince`,刷新 Dock 角标(`waitingIDs` 数量),对用户**看不到**的会话发系统通知(需要你——副标题按 `NeedKind` 区分提问 / 计划 / 权限——、出错、以及耗时 ≥30 秒的完成),然后 `resort` 让等待中的会话在侧栏上浮并 `notify`。Inbox 按 needs / review / working 分组;以问号结尾的完成消息归入 needs(视为在提问)。点击通知 → `Notifier.onOpen` → 切到对应工作区/打开 tab。
 
 ## 注意事项
 - **绝不修改用户的 Claude/Codex 配置文件**。一切通过包装脚本对单次启动加参数实现;用户原有的 Codex `notify` 由 `seperate-hook` 转调,必须保持可用。
