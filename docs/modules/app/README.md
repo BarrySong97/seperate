@@ -13,7 +13,7 @@
 - 调用关系:`main → AppDelegate → GhosttyRuntime.start / MainWindowController / Store.refresh / Updater.start`;菜单 action → `Store`;`Updater → Sparkle → GitHub Release 上的 appcast.xml`
 
 ## 数据流
-- 启动:`applicationDidFinishLaunching` 依次 `GhosttyRuntime.shared.start()` → 挂 `onSurfaceAction` → 装菜单 → 显示主窗口并 `workspace.sync(structure: true)` → `store.refresh()` → `Updater.shared.start()`,最后起一个 60 秒的 `store.refresh()` 定时器,并建 `SessionWatcher`(新会话记录一出现就 `store.refresh()`)。
+- 启动:`applicationDidFinishLaunching` 依次 `GhosttyRuntime.shared.start()` → 挂 `onSurfaceAction` → 装菜单 → 显示主窗口并 `workspace.sync(structure: true)` → `store.refresh()` → `Updater.shared.start()`,最后起一个 60 秒的 `store.refresh()` 定时器,并建 `SessionWatcher`(新会话记录一出现就 `store.refresh()`),再启动 `ControlServer`(`seperate` CLI 的 socket,退出时 `stop()`,见 [cli](../cli/README.md))。
 - 快捷键:聚焦的终端先拿到 ⌘D/⌘T/⌘1… → Ghostty 把它变成 action → `GhosttyRuntime` 先给 `TerminalView.handle`,没处理的走 `onSurfaceAction` → `AppDelegate.handleTerminalShortcut` 映射到 `store.splitFocused / newShellInFocusedPane / closeTab / focusPane`。
 - 更新:Sparkle 找到更新 → user driver delegate 回调 `setPending(version)` → 发 `Updater.changed` 通知 → `TopBarView` 显示药丸 → 点击调 `Updater.shared.checkForUpdates()` 弹 Sparkle 标准对话框。
 - 退出:`applicationWillTerminate` → `store.shutdown()`;关掉最后一个窗口即退出。

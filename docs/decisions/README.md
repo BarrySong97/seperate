@@ -23,3 +23,4 @@
 | 0004 | [DMG 双击安装器与签名 secrets](0004-dmg-installer-and-signing.md) | 已采纳 | 2026-09-25 |
 | 0005 | [日常只本地安装,发版由用户触发](0005-local-install-until-release.md) | 已采纳 | 2026-09-25 |
 | 0006 | [中英双语界面:内联 tr,重启生效](0006-bilingual-ui.md) | 已采纳 | 2026-09-29 |
+| 0007 | [Agent 通过 `seperate` CLI + Unix socket 操控 App](0007-seperate-cli-socket.md) | 已采纳 | 2026-10-15 |

@@ -11,7 +11,7 @@
 - `Sources/Workbench/UI/SidebarView.swift` — 项目 → Worktree → 会话的 NSOutlineView、底部「添加项目」+ 收件箱铃铛、Arc 式 Workspace 切换条（详见 [sidebar.md](./sidebar.md)）
 - `Sources/Workbench/UI/TopBarView.swift` — 顶栏：侧栏开关、Workspace 名、「N 栏 · N 个 Tab …」摘要、布局预设按钮、新版本提示
 - `Sources/Workbench/UI/WorkspaceView.swift` — 把 `store.layout` 渲染成嵌套 `SplitContainerView` / `PaneView`；分隔条拖动、拖放落点（边缘分屏 / 中间加 Tab）、空栏选择器
-- `Sources/Workbench/UI/PaneHeaderView.swift` — 每栏顶部：Tab 条（`TabView`，可拖，右键出关闭菜单）+ 来源行（项目/Worktree、状态、会话 id、Finder / 编辑器 / 复制路径 / ··· 操作）
+- `Sources/Workbench/UI/PaneHeaderView.swift` — 每栏顶部：Tab 条（`TabView`，可拖，右键出关闭菜单）+ 来源行（项目/Worktree、`seperate` 命令行留下的「由 X 打开 / X 输入 · 时间」、状态、会话 id、Finder / 编辑器 / 复制路径 / ··· 操作）
 - `Sources/Workbench/UI/CommandPalette.swift` — ⌘K / ⌘P 窗口内浮层面板（NSTableView）
 - `Sources/Workbench/UI/PaletteSearch.swift` — 面板的数据模型：scope、entry、分组与排序（无 UI）
 - `Sources/Workbench/UI/Fuzzy.swift` — 子序列模糊匹配 + 拼音（首字母 / 全拼）匹配（无 UI，有单测 `Tests/WorkbenchTests/FuzzyTests.swift`）

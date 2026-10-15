@@ -34,8 +34,10 @@
     "Sources/Workbench/Terminal/": "terminal",
     "Sources/Workbench/UI/": "ui",
     "Sources/Workbench/Core/": "core",
+    "Sources/Workbench/Control/": "cli",
     "core/src/": "core",
     "Sources/SeperateHook/": "hook",
+    "Sources/SeperateCLI/": "cli",
     "Sources/SeperateInstaller/": "installer",
     "scripts/": "release"
   },

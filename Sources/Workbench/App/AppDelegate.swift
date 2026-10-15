@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var main: MainWindowController?
     private var refreshTimer: Timer?
     private var sessionWatcher: SessionWatcher?
+    private var control: ControlServer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         GhosttyRuntime.shared.start()
@@ -63,10 +64,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         }
         // New transcripts (agents started outside Seperate) show up right away; the timer catches the rest.
         sessionWatcher = SessionWatcher { [weak self] in self?.store.refresh() }
+        // The `seperate` CLI (agents controlling the app) talks to this socket.
+        let commands = ControlCommands(store: store)
+        control = ControlServer { request in await commands.handle(request) }
+        control?.start()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
-    func applicationWillTerminate(_ notification: Notification) { store.shutdown() }
+    func applicationWillTerminate(_ notification: Notification) { control?.stop(); store.shutdown() }
 
     // MARK: Ghostty keybindings → our layout
     // A focused terminal sees ⌘D / ⌘T / ⌘1… first; Ghostty turns them into actions which we map

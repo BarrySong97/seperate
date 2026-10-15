@@ -5,6 +5,7 @@
 // @gotcha  @MainActor; every mutation must end in notify(Change) (which also schedules the debounced save);
 //          pick the narrowest Change so views don't rebuild. Details: docs/modules/model/README.md
 import AppKit
+import Carbon.HIToolbox
 import os
 
 /// App state: workspaces (projects + a pane layout each), sessions, and the live terminals.
@@ -49,6 +50,11 @@ final class Store {
     private var agentExited: Set<String> = []             // the agent quit back to its shell
     let notifier = Notifier()
     private(set) var liveTitles: [String: String] = [:]
+    /// Who last drove a session from outside (`seperate new / send / key`); shown in its pane header until you type there.
+    private(set) var remoteNotes: [String: RemoteNote] = [:]
+    /// Phase changes each agent reported, numbered so `seperate wait` can ask for what came after a point.
+    private(set) var reports: [String: [AgentReport]] = [:]
+    private(set) var reportSeq = 0
     private(set) var terminals: [String: TerminalView] = [:]
 
     // Indexes (rebuilt when projects/sessions change; read by every view)
@@ -66,6 +72,7 @@ final class Store {
 
     init() {
         AgentHooks.install()
+        try? FileManager.default.removeItem(at: Self.promptDir)   // first prompts of sessions that are gone with the last run
         load()
         if workspaces.isEmpty { workspaces = [Workspace.make(name: tr("默认", "Default"))]; activeID = workspaces[0].id; saveNow() }
         if !workspaces.contains(where: { $0.id == activeID }) { activeID = workspaces[0].id }
@@ -332,7 +339,10 @@ final class Store {
         }
         t.onNotify = { [weak self] title, body in self?.terminalNotification(id, title: title, body: body) }
         t.onCommandFinished = { [weak self] code in self?.agentQuit(id, exitCode: code) }
-        t.onUserInput = { [weak self] isReturn in self?.userTyped(id, isReturn: isReturn) }
+        t.onUserInput = { [weak self] isReturn in
+            if self?.remoteNotes.removeValue(forKey: id) != nil { self?.notify(.session(id)) }
+            self?.userTyped(id, isReturn: isReturn)
+        }
         t.contextMenu = { [weak self, weak t] in
             guard let self, let t else { return nil }
             return Menus.terminal(self, sessionID: id, view: t)
@@ -340,6 +350,8 @@ final class Store {
         t.onFocus = { [weak self] in self?.focusSession(id) }
         t.onClose = { [weak self] alive in self?.confirmEnd(id, processAlive: alive) }
         terminals[id] = t
+        // The first prompt goes with the first launch only.
+        if let i = created.firstIndex(where: { $0.id == id }) { created[i].initialPromptFile = nil }
         if !created.contains(where: { $0.id == id }), var copy = discovered.first(where: { $0.id == id }) {
             copy.lastActivity = Date()
             created.append(copy)   // keeps it listed after it ages out of the scan window
@@ -393,6 +405,9 @@ final class Store {
         clearPhase(id)
         agentExited.remove(id)
         liveTitles[id] = nil
+        remoteNotes[id] = nil
+        reports[id] = nil
+        try? FileManager.default.removeItem(at: Self.promptFile(for: id))
         detachEverywhere(id)
         if let i = created.firstIndex(where: { $0.id == id }), created[i].agentSessionID == nil {
             created.remove(at: i)   // a shell, or an agent that never saved anything: nothing to resume
@@ -549,6 +564,9 @@ final class Store {
     private func setPhase(_ id: String, _ new: AgentPhase?) {
         let old = phase[id]
         guard old != new else { return }
+        reportSeq += 1
+        reports[id, default: []].append(AgentReport(seq: reportSeq, phase: new, need: needKind[id], at: Date()))
+        if reports[id]!.count > 20 { reports[id]!.removeFirst() }
         // PermissionRequest and Notification both announce the same question: one alert, the better message.
         if case .needsInput = old, case .needsInput(let m) = new {
             if m != nil { phase[id] = new; notify(.session(id)) }
@@ -595,6 +613,80 @@ final class Store {
     func shotsSetPhase(_ id: String, _ new: AgentPhase?, need: NeedKind? = nil) {
         if let need { needKind[id] = need }
         setPhase(id, new)
+        notify(.session(id))
+    }
+
+    // MARK: Remote control (the `seperate` CLI; commands live in Control/ControlCommands.swift)
+
+    struct RemoteNote: Equatable {
+        enum Action { case opened, typed }
+        let action: Action
+        let by: String      // the session or program that did it
+        let at: Date
+    }
+
+    struct AgentReport {
+        let seq: Int
+        let phase: AgentPhase?
+        let need: NeedKind?
+        let at: Date
+    }
+
+    /// The agent's command ended and its terminal is back at the shell prompt.
+    func hasExited(_ id: String) -> Bool { agentExited.contains(id) }
+    func needKind(of id: String) -> NeedKind? { needKind[id] }
+
+    nonisolated static var promptDir: URL { dataDir.appendingPathComponent("prompts", isDirectory: true) }
+    nonisolated static func promptFile(for id: String) -> URL {
+        promptDir.appendingPathComponent(String(id.split(separator: ":").last ?? Substring(id)) + ".txt")
+    }
+
+    /// Starts a session for the CLI in the active workspace: a new pane on `edge` of `nearPane` (or a tab in it
+    /// when `edge` is nil). It has to be the shown tab of its pane, since a terminal starts only on screen.
+    /// Keyboard focus stays where the user has it unless `focus`.
+    @discardableResult
+    func startSession(_ kind: AgentKind, in wt: Worktree, prompt: String?, skipPermissions: Bool,
+                      nearPane: String?, edge: DropEdge?, focus: Bool, by: String) throws -> AgentSession {
+        let s = makeSession(kind, in: wt, skipPermissions: skipPermissions)
+        if let prompt, !prompt.isEmpty, let i = created.firstIndex(where: { $0.id == s.id }) {
+            let file = Self.promptFile(for: s.id)
+            try FileManager.default.createDirectory(at: Self.promptDir, withIntermediateDirectories: true)
+            try prompt.write(to: file, atomically: true, encoding: .utf8)
+            created[i].initialPromptFile = file.path
+            rebuildIndex()
+        }
+        remoteNotes[s.id] = RemoteNote(action: .opened, by: by, at: Date())
+        let target = nearPane.flatMap { p in layout.panes.contains { $0.id == p } ? p : nil } ?? layout.focusedPaneID
+        mutateLayout {
+            let keep = $0.focusedPaneID
+            if let edge { $0.split(target, edge: edge, with: s.id) } else { $0.addTab(s.id, to: target) }
+            if !focus { $0.focusedPaneID = keep }
+        }
+        return session(s.id) ?? s
+    }
+
+    /// Types `text` into a running session (as a paste, so several lines stay one message), then Return.
+    func remoteType(_ id: String, text: String, enter: Bool, by: String) -> Bool {
+        guard let t = terminals[id], t.surface != nil else { return false }
+        if !text.isEmpty { t.typeText(text) }
+        // Give the program a moment to take the paste before Return submits it.
+        if enter { DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak t] in t?.pressKey(kVK_Return, text: "\r") } }
+        noteRemote(id, by: by)
+        if enter { userTyped(id, isReturn: true) }
+        return true
+    }
+
+    /// Presses one key in a running session (answering a menu, Esc to interrupt, ^C).
+    func remoteKey(_ id: String, keyCode: Int, text: String?, modifiers: NSEvent.ModifierFlags, by: String) -> Bool {
+        guard let t = terminals[id], t.surface != nil else { return false }
+        t.pressKey(keyCode, text: text, modifiers: modifiers)
+        noteRemote(id, by: by)
+        userTyped(id, isReturn: keyCode == kVK_Return)
+        return true
+    }
+
+    private func noteRemote(_ id: String, by: String) {
+        remoteNotes[id] = RemoteNote(action: .typed, by: by, at: Date())
         notify(.session(id))
     }
 

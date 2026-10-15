@@ -1,4 +1,5 @@
-// @purpose One libghostty surface (pty + GPU renderer) hosted in an NSView, with keyboard/IME/mouse/file drops.
+// @purpose One libghostty surface (pty + GPU renderer) hosted in an NSView, with keyboard/IME/mouse/file drops;
+//          also types / presses keys / reads text for the `seperate` CLI.
 // @role    Created and destroyed by Store per running session; reports title/pwd/bell/exit via callbacks.
 // @deps    GhosttyKit, AppKit, Carbon.HIToolbox (key codes), GhosttyRuntime
 // @gotcha  Surface starts only once on screen at real size; call destroy() before release.
@@ -577,15 +578,38 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
     }
 
     /// Presses one key (e.g. kVK_Return with "\r", kVK_DownArrow with nil), straight to Ghostty.
-    func pressKey(_ keyCode: Int, text: String?) {
+    func pressKey(_ keyCode: Int, text: String?, modifiers: NSEvent.ModifierFlags = []) {
         for type in [NSEvent.EventType.keyDown, .keyUp] {
-            guard let e = NSEvent.keyEvent(with: type, location: .zero, modifierFlags: [], timestamp: 0,
+            guard let e = NSEvent.keyEvent(with: type, location: .zero, modifierFlags: modifiers, timestamp: 0,
                                            windowNumber: window?.windowNumber ?? 0, context: nil, characters: text ?? "",
                                            charactersIgnoringModifiers: text ?? "", isARepeat: false, keyCode: UInt16(keyCode))
             else { return }
             sendKey(type == .keyDown ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE, event: e, translationEvent: e,
                     text: type == .keyDown ? text : nil, composing: false)
         }
+    }
+
+    // MARK: Remote control (`seperate send / key / read`, through Store)
+
+    /// Text into the program as Ghostty's own text input (a bracketed paste where the program asked for one).
+    func typeText(_ text: String) {
+        guard let surface else { return }
+        text.withCString { ghostty_surface_text(surface, $0, UInt(text.utf8.count)) }
+    }
+
+    /// The last `lines` lines of scrollback + screen, trailing blank lines dropped.
+    func recentText(lines: Int) -> String? {
+        guard let surface else { return nil }
+        let sel = ghostty_selection_s(
+            top_left: ghostty_point_s(tag: GHOSTTY_POINT_SCREEN, coord: GHOSTTY_POINT_COORD_TOP_LEFT, x: 0, y: 0),
+            bottom_right: ghostty_point_s(tag: GHOSTTY_POINT_SCREEN, coord: GHOSTTY_POINT_COORD_BOTTOM_RIGHT, x: 0, y: 0),
+            rectangle: false)
+        var t = ghostty_text_s()
+        guard ghostty_surface_read_text(surface, sel, &t) else { return nil }
+        defer { ghostty_surface_free_text(surface, &t) }
+        var all = String(cString: t.text).components(separatedBy: "\n").map { $0.replacingOccurrences(of: "\\s+$", with: "", options: .regularExpression) }
+        while all.last?.isEmpty == true { all.removeLast() }
+        return all.suffix(max(1, lines)).joined(separator: "\n")
     }
 
     /// The last frame Ghostty drew into this view's IOSurface layer.

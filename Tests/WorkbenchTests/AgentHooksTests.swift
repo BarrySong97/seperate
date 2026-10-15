@@ -1,4 +1,5 @@
-// @purpose Tests for the agent → app pipe: wrapper scripts, Codex notify chaining, the hook helper's events.
+// @purpose Tests for the agent → app pipe: wrapper scripts, Codex notify chaining, the hook helper's events, and
+//          the `seperate` CLI's PATH entry, agent prompt and first-prompt launch command.
 // @role    XCTest for AgentHooks and the SeperateHook executable (skipped if the helper is not built).
 // @deps    XCTest, Workbench (@testable), SeperateHook build product, DistributedNotificationCenter
 // @gotcha  Uses a temp SEPERATE_DATA_DIR (useTempDataDir); the helper must print nothing. docs/topics/agent-hooks.md
@@ -35,6 +36,50 @@ final class AgentHooksTests: XCTestCase {
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: f)
         }
         return bin
+    }
+
+    /// With the CLI bundled: `seperate` goes on PATH (alone, never the wrappers' bin/), and agents get the
+    /// one-launch note about it, unless the user has Codex developer_instructions of their own.
+    func testCLIOnPathAndAgentPrompt() throws {
+        AgentHooks.install(helper: "/opt/hook", cli: "/opt/seperate-cli")
+        let link = dir.appendingPathComponent("cli/seperate").path
+        XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: link), "/opt/seperate-cli")
+        let config = dir.appendingPathComponent("config.toml").path
+        try "model = \"x\"\n".write(toFile: config, atomically: true, encoding: .utf8)
+        let env = AgentHooks.environment(session: "s1", helper: "/opt/hook", cli: "/opt/seperate-cli", codexConfig: config)
+        let pathDirs = try XCTUnwrap(env["PATH"]).split(separator: ":").map(String.init)
+        XCTAssertEqual(pathDirs.first, dir.appendingPathComponent("cli").path)
+        XCTAssertFalse(pathDirs.contains(try XCTUnwrap(env["SEPERATE_BIN"])), "nested agents must not pick up our wrappers")
+        XCTAssertEqual(env["SEPERATE_SOCKET"], ControlServer.defaultPath)
+
+        let fake = try fakeAgents() + ":/usr/bin:/bin"
+        let bin = try XCTUnwrap(env["SEPERATE_BIN"])
+        let claude = try run(bin + "/claude", ["--", "hi"], env: env.merging(["PATH": fake]) { $1 }).split(separator: "\n").map(String.init)
+        XCTAssertEqual(claude, ["--settings", try XCTUnwrap(env["SEPERATE_CLAUDE_SETTINGS"]), "--append-system-prompt-file",
+                                try XCTUnwrap(env["SEPERATE_AGENT_PROMPT"]), "--", "hi"])
+        XCTAssertEqual(try String(contentsOfFile: claude[3], encoding: .utf8), AgentHooks.agentPromptText)
+
+        let codex = try run(bin + "/codex", [], env: env.merging(["PATH": fake]) { $1 }).split(separator: "\n").map(String.init)
+        let dev = try XCTUnwrap(codex.first { $0.hasPrefix("developer_instructions=") })
+        let value = String(dev.dropFirst("developer_instructions=".count))
+        XCTAssertEqual(try JSONSerialization.jsonObject(with: Data(value.utf8), options: .fragmentsAllowed) as? String, AgentHooks.agentPromptText)
+        XCTAssertFalse(value.contains("\\/"), "TOML has no \\/ escape")
+
+        try "developer_instructions = \"mine\"\n".write(toFile: config, atomically: true, encoding: .utf8)
+        XCTAssertNil(AgentHooks.environment(session: "s1", helper: "/opt/hook", cli: "/opt/seperate-cli", codexConfig: config)["SEPERATE_CODEX_INSTRUCTIONS"],
+                     "the user's own developer_instructions win")
+    }
+
+    func testFirstPromptIsReadFromItsFileOnFirstLaunchOnly() {
+        var s = AgentSession(id: "new:1", kind: .claude, agentSessionID: nil, cwd: "/p", title: "t", lastActivity: Date())
+        s.initialPromptFile = "/d/it's.txt"
+        XCTAssertEqual(s.launchCommand, #"claude -- "$(cat '/d/it'\''s.txt')""#)
+        s.kind = .codex
+        XCTAssertEqual(s.launchCommand, #"codex -- "$(cat '/d/it'\''s.txt')""#)
+        s.kind = .shell
+        XCTAssertEqual(s.launchCommand, #"eval "$(cat '/d/it'\''s.txt')""#)
+        s.kind = .claude; s.agentSessionID = "abc"
+        XCTAssertEqual(s.launchCommand, "claude --resume abc", "a resume never sends the first prompt again")
     }
 
     func testWrappersAddHooksAndPassArguments() throws {

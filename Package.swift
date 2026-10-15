@@ -33,6 +33,12 @@ let package = Package(
             path: "Sources/SeperateHook",
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        // `seperate`: the command agents use to control the app (talks to ControlServer over a Unix socket).
+        .executableTarget(
+            name: "SeperateCLI",
+            path: "Sources/SeperateCLI",
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         // "安装 Seperate.app": the double-click installer inside the DMG.
         .executableTarget(
             name: "SeperateInstaller",

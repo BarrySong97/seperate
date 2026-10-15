@@ -38,6 +38,7 @@ cp "$BIN" "$APP/Contents/MacOS/Seperate"
 ditto "$(dirname "$BIN")/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/Seperate"
 cp "$(dirname "$BIN")/SeperateHook" "$APP/Contents/MacOS/seperate-hook"
+cp "$(dirname "$BIN")/SeperateCLI" "$APP/Contents/MacOS/seperate-cli"
 cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 # Ghostty looks for Contents/Resources/{ghostty,terminfo} next to the executable.
 cp -R Vendor/ghostty-resources/ghostty "$APP/Contents/Resources/ghostty"

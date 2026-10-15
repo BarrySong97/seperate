@@ -89,19 +89,25 @@ struct AgentSession: Codable, Identifiable, Hashable {
     /// Claude started with --dangerously-skip-permissions. Kept in memory only (not in the database),
     /// so a session resumed after a restart asks for permissions again.
     var skipPermissions: Bool?
+    /// A file holding the first prompt of a session started with `seperate new --prompt` (for a shell: the
+    /// command to run). Memory only, used once for the first launch; a resume never sends it again.
+    var initialPromptFile: String?
 
     /// Command the terminal runs for this tab.
     var launchCommand: String? {
+        // The prompt is read from its file by the shell, so no quoting of the prompt itself can go wrong.
+        let cat = initialPromptFile.map { "\"$(cat '" + $0.replacingOccurrences(of: "'", with: "'\\''") + "')\"" }
+        let prompt = cat.map { " -- " + $0 } ?? ""
         switch kind {
         case .shell:
-            return nil
+            return cat.map { "eval " + $0 }
         case .codex:
             if let sid = agentSessionID { return "codex resume \(sid)" }
-            return "codex"
+            return "codex" + prompt
         case .claude:
             let skip = skipPermissions == true ? " --dangerously-skip-permissions" : ""
             if let sid = agentSessionID { return "claude --resume \(sid)" + skip }
-            return "claude" + skip
+            return "claude" + skip + prompt
         }
     }
 }

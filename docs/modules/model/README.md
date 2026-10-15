@@ -18,6 +18,7 @@
 - **刷新**:`refresh()` 由 AppDelegate 启动时、每 60 秒定时器、`SessionWatcher`(App 外新开的 Claude / Codex 会话,约 1 秒内)、App 回到前台、菜单手动触发;在后台 Task 里 `Core.scanSessions()` + `resolveProjects`,回主线程 `applyScan` 比对,有变化才 `rebuildIndex()` + `notify(.projects)`。扫描进行中再次请求会排队补跑一次,不会丢。
 - **新会话 id 认领**:App 内新建的 Agent 起初没有会话 id,`adoptAgentIDs()` 按 kind + cwd + 时间(创建前 5 秒内起)从扫描结果里认领,之后才能 resume;认领时标题直接换成扫描到的(运行中的 tab 仍显示终端实时标题)。
 - **保留的会话跟随扫描**:`created` 里有会话 id 的(App 里开的,或点开过的已扫描会话)每次扫描由 `syncCreated()` 取扫描结果里更新的 `lastActivity` 和真标题(扫描没有标题时保留原名)。否则「Claude Code 6」这种临时名会永久留下,在别处(飞书机器人、其他 App)继续的对话也会按点开那一刻的旧时间排序、被挤进「显示全部」。
+- **CLI 操控**(`seperate`,见 [cli](../cli/README.md)):`startSession` 在调用者旁边开栏、不抢焦点、首条 prompt 写进 `prompts/<id>.txt`(`AgentSession.initialPromptFile`,只在内存里、只用于首次启动);`remoteType` / `remoteKey` 往终端里输入并记 `remoteNotes`(栏头「X 输入」,用户打字即清);`setPhase` 每次变化都追加带全局序号的 `reports`,供 `wait` 找"上次发送之后"的结果。
 - **跳过权限**:`AgentSession.skipPermissions`(只对 Claude)让 `launchCommand` 追加 `--dangerously-skip-permissions`(新开和 resume 都带)。只存在内存里,不进数据库:重启 App 后恢复的会话会重新询问权限。
 - **Agent 状态**:hook 事件 / 终端 OSC 通知 / 用户按键 / 命令退出 → `setPhase` → 更新 `phase`、角标、系统通知 → `resort` → `notify`。详见 [agent-hooks 专题](../../topics/agent-hooks.md)。
 - **保存**:任何 `notify()` 都会 `scheduleSave()`(0.5 秒防抖)→ `saveNow()` 写 SQLite;退出时 `shutdown()` 立即保存并销毁终端。
@@ -26,6 +27,7 @@
 - 观察:`observe(_:) -> UUID` / `unobserve`,回调收到 `Store.Change`:`.projects`、`.session(id)`、`.layout(structure:)`、`.workspace`、`.reveal(id)`、`.sidebar`。
 - 查询:`session(_:)`、`status(of:)`、`phaseMessage(of:)`、`sessions(in:)`、`inboxItems()`、`waitingIDs`、`layout`、`visibleProjects` 等。
 - 操作:打开/新建/结束会话(`closeTab` 单个,经 Ghostty 确认;`closeTabs` 批量,有进程在跑只弹一次确认)、`mutateLayout`、工作区增删改、项目与 worktree 管理、`markInboxRead`、`openFromInbox`。点收件箱行和系统通知都走 `goTo(id)`:会话开在某个 Workspace 的栏里就切过去并激活那个 Tab;没开着就切到**它项目所在的** Workspace 再打开,而不是开在当前 Workspace。
+- CLI 用:`startSession`、`remoteType`、`remoteKey`、`reports` / `reportSeq`、`remoteNotes`、`hasExited`、`needKind(of:)`、`applyScan`(测试也用)、`Store.promptFile(for:)`。
 - 由 UI 安装的回调:`inboxHandler`、`paletteHandler`、`importHandler`。
 - 静态:`Store.dataDir`、`dbURL`、`legacyURL`(测试用)。
 - 仅截图模式:`shotsSetPhase(_:_:need:)` 直接摆出收件箱状态(平时由 agent hook 驱动)。

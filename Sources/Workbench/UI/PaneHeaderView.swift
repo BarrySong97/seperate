@@ -1,4 +1,5 @@
-// @purpose Per-pane header: tab strip plus origin line (project / worktree, status, session id, worktree actions).
+// @purpose Per-pane header: tab strip plus origin line (project / worktree, "typed by" from the CLI, status,
+//          session id, worktree actions).
 // @role    Owned by PaneView (WorkspaceView.swift); TabView drags session ids / panes; actions call Store
 //          (activate, closeTab, closeTabs, splitFocused, closePane) and Menus (tab right-click menu).
 // @deps    AppKit (NSDraggingSource), Store, Widgets (IconButton, ChipView, DotView), Menus, ExternalApp.
@@ -23,6 +24,8 @@ final class PaneHeaderView: NSView, NSDraggingSource {
     private let origin = NSTextField.label(font: Theme.smallFont, color: Theme.muted)
     private let originStatus = DotView(frame: .zero)
     private let originState = NSTextField.label(font: Theme.smallFont, color: Theme.faint)
+    // "Opened by / typed by <agent>" when the `seperate` CLI drove this session; gone once you type in it.
+    private let remote = NSTextField.label(font: Theme.smallFont, color: Theme.accent)
     private let sid = NSTextField.label(font: Theme.monoFont, color: Theme.faint)
     // Worktree actions at the end of the origin line: Finder, default editor ▾, copy path, ···.
     private let finderButton = IconButton(symbol: "folder", tooltip: tr("在 Finder 中显示", "Show in Finder"), side: 26)
@@ -43,7 +46,7 @@ final class PaneHeaderView: NSView, NSDraggingSource {
         strip.wantsLayer = true
         strip.layer?.masksToBounds = true
         originChip.side = 14
-        [strip, splitRight, splitDown, close, originChip, origin, originStatus, originState, sid].forEach(addSubview)
+        [strip, splitRight, splitDown, close, originChip, origin, remote, originStatus, originState, sid].forEach(addSubview)
         editorGroup.wantsLayer = true
         editorGroup.layer?.cornerRadius = 6
         editorGroup.layer?.backgroundColor = Theme.selBG.cgColor
@@ -121,7 +124,7 @@ final class PaneHeaderView: NSView, NSDraggingSource {
         updateActions(active.flatMap { store.session($0) }.flatMap { store.worktree(for: $0) })
         guard let active, let s = store.session(active) else {
             originChip.isHidden = true; origin.stringValue = tr("空栏", "Empty pane"); originStatus.status = .history
-            originState.stringValue = ""; sid.stringValue = ""; needsLayout = true; return
+            originState.stringValue = ""; sid.stringValue = ""; remote.stringValue = ""; needsLayout = true; return
         }
         if let wt = store.worktree(for: s) {
             originChip.isHidden = false
@@ -135,9 +138,21 @@ final class PaneHeaderView: NSView, NSDraggingSource {
         let st = store.status(of: active)
         originStatus.status = st
         originState.stringValue = [.waiting: tr("需要你", "Needs you"), .working: tr("工作中", "Working"), .done: tr("完成", "Done"), .failed: tr("出错", "Failed"), .running: tr("运行中", "Running")][st] ?? ""
+        remote.stringValue = store.remoteNotes[active].map(Self.remoteText) ?? ""
+        remote.toolTip = remote.stringValue.isEmpty ? nil : tr("由 seperate 命令行操作；你在这里输入后消失", "Done through the seperate command; clears once you type here")
         sid.stringValue = s.agentSessionID.map { String($0.prefix(8)) } ?? ""
         sid.toolTip = s.agentSessionID.map { tr("会话 ID：\($0)", "Session ID: \($0)") }
         needsLayout = true
+    }
+
+    private static let clock: DateFormatter = { let f = DateFormatter(); f.timeStyle = .short; f.dateStyle = .none; return f }()
+
+    static func remoteText(_ n: Store.RemoteNote) -> String {
+        let at = clock.string(from: n.at)
+        switch n.action {
+        case .opened: return tr("由「\(n.by)」打开 · \(at)", "Opened by \(n.by) · \(at)")
+        case .typed: return tr("「\(n.by)」输入 · \(at)", "Typed by \(n.by) · \(at)")
+        }
     }
 
     override func layout() {
@@ -179,7 +194,11 @@ final class PaneHeaderView: NSView, NSDraggingSource {
         originState.sizeToFit()
         originState.frame = NSRect(x: sid.frame.minX - originState.frame.width - 10, y: y2 + 5, width: originState.frame.width, height: 15)
         originStatus.frame = NSRect(x: originState.frame.minX - 11, y: y2 + 10, width: 6, height: 6)
-        origin.frame = NSRect(x: ox, y: y2 + 5, width: max(0, originStatus.frame.minX - ox - 10), height: 15)
+        let room = max(0, originStatus.frame.minX - ox - 10)
+        remote.sizeToFit()
+        let rw = remote.stringValue.isEmpty ? 0 : min(remote.frame.width, room * 0.6)
+        remote.frame = NSRect(x: originStatus.frame.minX - 12 - rw, y: y2 + 5, width: rw, height: 15)
+        origin.frame = NSRect(x: ox, y: y2 + 5, width: max(0, room - (rw > 0 ? rw + 12 : 0)), height: 15)
     }
 
     // MARK: Dragging the whole pane by the empty part of its tab strip

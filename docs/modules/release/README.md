@@ -8,7 +8,7 @@
 脚本(`scripts/`):
 - `setup-ghostty.sh` — 下载固定版本 Zig 到 `.deps/`,拉固定 commit 的 Ghostty,构建 `Vendor/GhosttyKit.xcframework` + `Vendor/ghostty-resources/`。
 - `build-core.sh` — `cargo build --release` 编 `core/`,包成 `Vendor/WorkbenchCore.xcframework`。
-- `build-app.sh [debug|release] [--open]` — 调 `build-core.sh` + `swift build`,组装 `build/Seperate.app`(含 Sparkle.framework、`seperate-hook`、ghostty 资源),写 `Info.plist`,codesign。
+- `build-app.sh [debug|release] [--open]` — 调 `build-core.sh` + `swift build`,组装 `build/Seperate.app`(含 Sparkle.framework、`seperate-hook`、`seperate-cli`、ghostty 资源),写 `Info.plist`,codesign。
 - `build-installer.sh` — 把 `build/Seperate.app` 装进 `build/Install Seperate.app`(中文系统显示「安装 Seperate」)。
 - `package-dmg.sh` — 出 `build/Seperate-<ver>.zip`(Sparkle 用)和 `build/Seperate-<ver>.dmg`(dmgbuild,venv 在 `.deps/dmgbuild`)。
 - `dmg-settings.py` — dmgbuild 配置(窗口、图标位置),由 `package-dmg.sh` 传入。
@@ -28,6 +28,7 @@ CI(`.github/`):
 - `GhosttyKit`、`WorkbenchCore` — binaryTarget,指向 `Vendor/*.xcframework`(由上面两个 setup/build 脚本生成)。
 - `Workbench` — 主 app(产品名显示为 Seperate),依赖上面两者 + Sparkle(SPM,`from: 2.10.0`)。
 - `SeperateHook` — agent hook 转发器,打进 app 为 `Contents/MacOS/seperate-hook`。
+- `SeperateCLI` — `seperate` 命令,打进 app 为 `Contents/MacOS/seperate-cli`(不能叫 `seperate`:大小写不敏感的磁盘上会覆盖主程序 `Seperate`)。
 - `SeperateInstaller` — 双击安装器。
 - `WorkbenchTests` — 测试。
 

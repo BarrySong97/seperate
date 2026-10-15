@@ -6,7 +6,7 @@
 
 ## 文件清单与关系
 - `Sources/Workbench/Terminal/GhosttyRuntime.swift` — 单例,`ghostty_init` / 配置加载 / `ghostty_app_new`,C 回调分发,剪贴板读写
-- `Sources/Workbench/Terminal/TerminalView.swift` — 一个 surface 的 NSView:懒启动、尺寸同步、键鼠事件、`NSTextInputClient`、辅助功能
+- `Sources/Workbench/Terminal/TerminalView.swift` — 一个 surface 的 NSView:懒启动、尺寸同步、键鼠事件、`NSTextInputClient`、辅助功能;给 `seperate` CLI 用的 `typeText`(`ghostty_surface_text`)、`pressKey(_:text:modifiers:)`、`recentText(lines:)`(`GHOSTTY_POINT_SCREEN` 全部回滚 + 屏幕取末尾 N 行)
 - 调用关系:`AppDelegate → GhosttyRuntime.start`;`Store → TerminalView(init/destroy)`;`libghostty → GhosttyRuntime 回调 → TerminalView.handle → (未处理) onSurfaceAction → AppDelegate`
 - GhosttyKit 来自 `Vendor/GhosttyKit.xcframework`,由 `scripts/setup-ghostty.sh` 从上游 Ghostty 固定 commit 编译
 
