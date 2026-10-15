@@ -10,12 +10,14 @@
 - `Sources/Workbench/Model/AgentHooks.swift` — 安装 claude/codex 包装脚本与 hooks 文件,生成终端环境变量
 - `Sources/Workbench/Model/Notifier.swift` — macOS 通知 + Dock 角标
 - `Sources/Workbench/Model/ExternalApps.swift` — 可用外部编辑器/终端清单
+- `Sources/Workbench/Model/SessionWatcher.swift` — FSEvents 监视 `~/.claude/projects` 与 `~/.codex`,出现新会话记录时(防抖)请求 `refresh()`
 - 调用关系:`AppDelegate → Store → Core(FFI: git / scan / SQLite) · TerminalView · Notifier · AgentHooks`;`UI 视图 → store.observe / store 方法`
 
 ## 数据流
 - **启动**:`Store.init` → `AgentHooks.install()` → `load()`(SQLite,失败回退 `state.json`)→ `resolveProjects`(同步读 git)→ `rebuildIndex()` → 注册分布式通知(Agent 事件)与 `didBecomeActive`(markSeen)。
-- **刷新**:`refresh()` 由 AppDelegate 启动时、每 60 秒定时器、菜单手动触发;在后台 Task 里 `Core.scanSessions()` + `resolveProjects`,回主线程比对,有变化才 `rebuildIndex()` + `notify(.projects)`。
-- **新会话 id 认领**:App 内新建的 Agent 起初没有会话 id,`adoptAgentIDs()` 按 kind + cwd + 时间(创建前 5 秒内起)从扫描结果里认领,之后才能 resume。
+- **刷新**:`refresh()` 由 AppDelegate 启动时、每 60 秒定时器、`SessionWatcher`(App 外新开的 Claude / Codex 会话,约 1 秒内)、App 回到前台、菜单手动触发;在后台 Task 里 `Core.scanSessions()` + `resolveProjects`,回主线程 `applyScan` 比对,有变化才 `rebuildIndex()` + `notify(.projects)`。扫描进行中再次请求会排队补跑一次,不会丢。
+- **新会话 id 认领**:App 内新建的 Agent 起初没有会话 id,`adoptAgentIDs()` 按 kind + cwd + 时间(创建前 5 秒内起)从扫描结果里认领,之后才能 resume;认领时标题直接换成扫描到的(运行中的 tab 仍显示终端实时标题)。
+- **保留的会话跟随扫描**:`created` 里有会话 id 的(App 里开的,或点开过的已扫描会话)每次扫描由 `syncCreated()` 取扫描结果里更新的 `lastActivity` 和真标题(扫描没有标题时保留原名)。否则「Claude Code 6」这种临时名会永久留下,在别处(飞书机器人、其他 App)继续的对话也会按点开那一刻的旧时间排序、被挤进「显示全部」。
 - **跳过权限**:`AgentSession.skipPermissions`(只对 Claude)让 `launchCommand` 追加 `--dangerously-skip-permissions`(新开和 resume 都带)。只存在内存里,不进数据库:重启 App 后恢复的会话会重新询问权限。
 - **Agent 状态**:hook 事件 / 终端 OSC 通知 / 用户按键 / 命令退出 → `setPhase` → 更新 `phase`、角标、系统通知 → `resort` → `notify`。详见 [agent-hooks 专题](../../topics/agent-hooks.md)。
 - **保存**:任何 `notify()` 都会 `scheduleSave()`(0.5 秒防抖)→ `saveNow()` 写 SQLite;退出时 `shutdown()` 立即保存并销毁终端。
@@ -30,6 +32,7 @@
 
 ## 注意事项
 - **默认值按语言,已有数据不翻译**:新 Workspace 的默认名(「默认 / Default」)、通知和对话框文案走 `tr`;数据库里已有的名称、标题、别名是用户数据,原样保留。
+- **`SessionWatcher` 只看"新文件"**:运行中的 Agent 不停追加自己的记录,若每次追加都重扫会反复读所有文件头;所以只有新建/改名的 `<claude>/<目录>/<id>.jsonl`、`<codex>/sessions/**/rollout-*.jsonl` 和 Codex 标题索引 `session_index.jsonl` 触发刷新,`lastActivity` 排序和 Claude 摘要标题仍靠 60 秒定时器。启动时不存在的目录不监视。
 - **全部 `@MainActor`**。后台只做 `Core` 调用(`resolveProjects` 是 `nonisolated static`),结果必须回 `MainActor.run` 再写状态。
 - **变更通知模型**:没有 SwiftUI/Combine,也不整体重绘。每次改状态后必须调 `notify(<最窄的 Change>)`,否则视图不刷新、也不会保存(保存挂在 `notify` 上)。`.layout(structure: true)` 只在 pane 增删/嵌套变化时发出(用 `LayoutModel.shape` 比对),否则视图会整块重建。
 - 改布局一律走 `mutateLayout { }`,它负责比对、发通知、`markSeen()`;不要直接赋值 `layout`。

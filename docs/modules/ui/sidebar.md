@@ -19,7 +19,8 @@
 - 完全交给 AppKit：`autosaveExpandedItems = true`，`autosaveName = "sidebar-<workspaceID>"`，每个 Workspace 一份（CodeEdit 的做法）。某 Workspace 首次加载时全部展开。
 - `expanded` 集合只是为 reload 后恢复而记下的 key：只有**用户显式折叠**才移除（AppKit 在父级折叠时也会给子级发通知，不能据此移除）；AppKit 自己恢复的展开用 `noteVisibleExpansion()` 补记。
 - `reload()` = `reloadData()` 后按 key 先展开父再展开子（子项只在父展开后存在）。
-- 回归测试：`Tests/WorkbenchTests/SidebarTests.swift`（折叠状态必须跨 reload 保留）。
+- **新出现的行默认展开**：`groupKeys` 记着本 Workspace 已列出过的项目 / Worktree 行；`reload()` 时第一次出现的行（比如 App 外的 Agent 在一个原本没有会话的 Worktree 里开了会话，或项目从 1 个 Worktree 变成多个、改成分组显示）加入 `expanded`，否则新会话会被收在折叠的行里看不到。用户显式折叠过的行不受影响。
+- 回归测试：`Tests/WorkbenchTests/SidebarTests.swift`（折叠状态必须跨 reload 保留；新出现的行展开、显式折叠的行保持折叠）。
 
 ## 展开 / 折叠动画
 AppKit 自带的展开动画会让透明行从父行上方滑过。这里改成手风琴式：父行下方的行滑开/合拢留出空隙，子行在空隙里淡入/淡出；`toggling` 标志防止动画中重入。行 cell 的 chevron 通过 `DisclosureCell.setOpen` 同步旋转。

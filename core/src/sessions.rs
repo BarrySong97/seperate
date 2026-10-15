@@ -1,22 +1,33 @@
 // @purpose Discovers Codex and Claude Code conversations from their on-disk transcripts.
 // @role    Behind wb_scan_sessions; also feeds agents.rs.
 // @deps    serde_json, ~/.codex and ~/.claude/projects file layouts
-// @gotcha  Reads heads only; formats are the agents' private files and may change.
+// @gotcha  Reads heads (and a Claude transcript's tail for its newest title), cached by size + mtime;
+//          formats are the agents' private files and may change.
 //          docs/modules/core/README.md
 //! Discovers Codex and Claude Code conversations on disk.
 //!
 //! Codex:  ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl, first line is `session_meta`
-//!         titles in ~/.codex/session_index.jsonl (`{id, thread_name}` per line, last wins)
+//!         title = ~/.codex/session_index.jsonl (`{id, thread_name}` per line, last wins), else the
+//!         first prompt the user typed (not the environment / AGENTS.md messages Codex adds)
 //! Claude: ~/.claude/projects/<encoded cwd>/<uuid>.jsonl, entries carry `cwd`;
-//!         title = `summary` entry, else the first plain user prompt
+//!         title = the last `custom-title` / `ai-title` / `agent-name` entry (rewritten as the session
+//!         goes on, so read from the end), else a `summary`, else the first plain user prompt
+//!         (a string, or the text blocks of a list as the Agent SDK writes it)
+//! Heads and tails are only read again when a file's size or mtime changed (see `cached`).
 
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read};
+use std::io::{Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+const HEAD: usize = 256 * 1024;
+/// How far back from the end to look for the newest title entry.
+const TAIL_STEPS: [u64; 3] = [256 * 1024, 1024 * 1024, 4 * 1024 * 1024];
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Session {
@@ -56,6 +67,10 @@ pub fn scan_codex(root: &Path, cutoff: SystemTime) -> Vec<Session> {
         if by_id.get(id).map_or(false, |s| s.last_activity >= secs) {
             continue;
         }
+        let title = match titles.get(id) {
+            Some(t) => t.clone(),
+            None => cached(&CODEX_PROMPT, &file, modified, codex_first_prompt).unwrap_or_default(), // empty: the app shows "Codex session"
+        };
         by_id.insert(
             id.to_string(),
             Session {
@@ -63,7 +78,7 @@ pub fn scan_codex(root: &Path, cutoff: SystemTime) -> Vec<Session> {
                 kind: "codex".into(),
                 agent_session_id: id.to_string(),
                 cwd: cwd.to_string(),
-                title: titles.get(id).cloned().unwrap_or_default(), // empty: the app shows its own "Codex session"
+                title,
                 last_activity: secs,
             },
         );
@@ -90,7 +105,7 @@ pub fn scan_claude(root: &Path, cutoff: SystemTime) -> Vec<Session> {
     let mut out = Vec::new();
     for (file, modified) in jsonl_files(root, cutoff, Some(1)) {
         let sid = file.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
-        let Some((cwd, title)) = claude_meta(&file) else { continue };
+        let Some((cwd, title)) = cached(&CLAUDE_META, &file, modified, claude_meta) else { continue };
         out.push(Session {
             id: format!("claude:{sid}"),
             kind: "claude".into(),
@@ -103,12 +118,90 @@ pub fn scan_claude(root: &Path, cutoff: SystemTime) -> Vec<Session> {
     out
 }
 
-/// Reads the head of a Claude transcript: its cwd and a human title.
+/// Per-file results keyed by path, valid while size and mtime stay the same, so a scan only re-reads
+/// the transcripts that changed (a running agent's, mostly).
+type Cache<T> = Mutex<HashMap<PathBuf, (SystemTime, u64, Option<T>)>>;
+static CLAUDE_META: OnceLock<Cache<(String, Option<String>)>> = OnceLock::new();
+static CODEX_PROMPT: OnceLock<Cache<String>> = OnceLock::new();
+
+fn cached<T: Clone>(cache: &OnceLock<Cache<T>>, file: &Path, modified: SystemTime, read: fn(&Path) -> Option<T>) -> Option<T> {
+    let cache = cache.get_or_init(Default::default);
+    let size = fs::metadata(file).map(|m| m.len()).unwrap_or(0);
+    if let Some((m, s, v)) = cache.lock().unwrap().get(file) {
+        if *m == modified && *s == size {
+            return v.clone();
+        }
+    }
+    let v = read(file);
+    cache.lock().unwrap().insert(file.to_path_buf(), (modified, size, v.clone()));
+    v
+}
+
+/// Names a Claude transcript gives itself; a later entry replaces an earlier one.
+#[derive(Default)]
+struct ClaudeNames {
+    custom: Option<String>,
+    ai: Option<String>,
+    agent: Option<String>,
+}
+
+impl ClaudeNames {
+    fn take(&mut self, v: &Value) {
+        let text = |k: &str| v[k].as_str().map(str::trim).filter(|t| !t.is_empty()).map(str::to_string);
+        match v["type"].as_str() {
+            Some("custom-title") => self.custom = text("customTitle").or(self.custom.take()),
+            Some("ai-title") => self.ai = text("aiTitle").or(self.ai.take()),
+            Some("agent-name") => self.agent = text("agentName").or(self.agent.take()),
+            _ => {}
+        }
+    }
+    fn found(&self) -> bool { self.custom.is_some() || self.ai.is_some() || self.agent.is_some() }
+    fn best(self) -> Option<String> { self.custom.or(self.ai).or(self.agent) }
+}
+
+/// The first thing the user wrote: a plain string, or the text blocks of a list (Agent SDK, Codex).
+/// Wrapped context (`<command-name>`, `<environment_context>`, …) and Codex's AGENTS.md message are skipped.
+fn prompt_text(content: &Value) -> Option<String> {
+    let texts: Vec<&str> = match content {
+        Value::String(s) => vec![s.as_str()],
+        Value::Array(blocks) => blocks
+            .iter()
+            .filter(|b| matches!(b["type"].as_str(), Some("text" | "input_text")))
+            .filter_map(|b| b["text"].as_str())
+            .collect(),
+        _ => vec![],
+    };
+    texts
+        .into_iter()
+        .map(str::trim)
+        .find(|t| !t.is_empty() && !t.starts_with('<') && !t.starts_with("# AGENTS.md instructions"))
+        .map(unquote)
+}
+
+/// Chat bridges (a Feishu bot) send "[Quoted message from User]:\n<the quoted message>\n\n<the reply>":
+/// the reply is what this prompt asks; without one, the quote.
+fn unquote(t: &str) -> String {
+    let mut lines = t.lines();
+    let first = lines.next().unwrap_or("").trim();
+    if !(first.starts_with('[') && first.ends_with("]:")) {
+        return t.to_string();
+    }
+    let rest = lines.collect::<Vec<_>>().join("\n");
+    let paragraphs: Vec<&str> = rest.split("\n\n").map(str::trim).filter(|p| !p.is_empty()).collect();
+    paragraphs.last().map(|p| p.to_string()).unwrap_or_else(|| t.to_string())
+}
+
+/// A Claude transcript's cwd and a human title.
 fn claude_meta(file: &Path) -> Option<(String, Option<String>)> {
-    let head = read_head(file, 256 * 1024)?;
+    let head = read_head(file, HEAD)?;
     let (mut cwd, mut summary, mut first_prompt) = (None, None, None);
-    for line in head.split(|b| *b == b'\n').take(400) {
+    let mut names = ClaudeNames::default();
+    for (i, line) in head.split(|b| *b == b'\n').enumerate() {
         let Ok(v) = serde_json::from_slice::<Value>(line) else { continue };
+        names.take(&v);
+        if i >= 400 {
+            continue;
+        }
         if cwd.is_none() {
             cwd = v["cwd"].as_str().map(str::to_string);
         }
@@ -116,19 +209,52 @@ fn claude_meta(file: &Path) -> Option<(String, Option<String>)> {
             summary = v["summary"].as_str().map(str::to_string);
         }
         if first_prompt.is_none() && v["type"] == "user" && v["isMeta"] != true {
-            if let Some(t) = v["message"]["content"].as_str() {
-                if !t.starts_with('<') {
-                    first_prompt = Some(t.to_string());
-                }
-            }
-        }
-        if cwd.is_some() && summary.is_some() {
-            break;
+            first_prompt = prompt_text(&v["message"]["content"]);
         }
     }
     let cwd = cwd?;
-    let title = summary.or(first_prompt).map(|t| one_line(&t, 40));
+    // Titles are rewritten as the conversation goes on: the newest one is near the end.
+    let size = fs::metadata(file).map(|m| m.len()).unwrap_or(0);
+    if size > HEAD as u64 {
+        for step in TAIL_STEPS {
+            let mut tail = ClaudeNames::default();
+            let Some(bytes) = read_tail(file, step.min(size)) else { break };
+            for line in bytes.split(|b| *b == b'\n').skip(1) {   // the first line may be cut
+                if contains(line, b"-title") || contains(line, b"agent-name") {
+                    if let Ok(v) = serde_json::from_slice::<Value>(line) {
+                        tail.take(&v);
+                    }
+                }
+            }
+            if tail.found() {
+                names = ClaudeNames { custom: tail.custom.or(names.custom), ai: tail.ai.or(names.ai), agent: tail.agent.or(names.agent) };
+                break;
+            }
+            if step >= size {
+                break;
+            }
+        }
+    }
+    let title = names.best().or(summary).or(first_prompt).map(|t| one_line(&t, 40));
     Some((cwd, title))
+}
+
+/// The first prompt the user typed in a Codex rollout (its `response_item` user messages).
+fn codex_first_prompt(file: &Path) -> Option<String> {
+    let head = read_head(file, 1024 * 1024)?;
+    for line in head.split(|b| *b == b'\n').skip(1) {
+        if !contains(line, br#""role":"user""#) {
+            continue;
+        }
+        let Ok(v) = serde_json::from_slice::<Value>(line) else { continue };
+        let p = &v["payload"];
+        if v["type"] == "response_item" && p["type"] == "message" && p["role"] == "user" {
+            if let Some(t) = prompt_text(&p["content"]) {
+                return Some(one_line(&t, 40));
+            }
+        }
+    }
+    None
 }
 
 /// `.jsonl` files under `dir` modified after `cutoff`; `max_depth` limits directory nesting.
@@ -168,6 +294,19 @@ fn first_line(p: &Path) -> Option<Vec<u8>> {
         buf.pop();
     }
     (!buf.is_empty()).then_some(buf)
+}
+
+/// Cheap check before parsing a line as JSON.
+fn contains(hay: &[u8], needle: &[u8]) -> bool {
+    hay.windows(needle.len()).any(|w| w == needle)
+}
+
+fn read_tail(p: &Path, len: u64) -> Option<Vec<u8>> {
+    let mut f = File::open(p).ok()?;
+    f.seek(SeekFrom::End(-(len as i64))).ok()?;
+    let mut buf = Vec::with_capacity(len as usize);
+    f.read_to_end(&mut buf).ok()?;
+    Some(buf)
 }
 
 fn read_head(p: &Path, max: usize) -> Option<Vec<u8>> {
@@ -231,5 +370,67 @@ mod tests {
         assert_eq!(found[0].agent_session_id, "abc");
         assert_eq!(found[0].cwd, "/Users/x/proj");
         assert_eq!(found[0].title, "帮我修一下登录");
+    }
+
+    #[test]
+    fn claude_title_prefers_its_own_newest_name_and_reads_sdk_prompts() {
+        let root = std::env::temp_dir().join(format!("wbcore-names-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let proj = root.join("-Users-x-proj");
+        fs::create_dir_all(&proj).unwrap();
+        // Agent SDK: the prompt is a list of blocks; no title entry yet.
+        fs::write(
+            proj.join("sdk.jsonl"),
+            r#"{"type":"user","cwd":"/Users/x/proj","message":{"content":[{"type":"text","text":"执行KAN-199测试基线"}]}}"#,
+        )
+        .unwrap();
+        // A long session: its ai-title was rewritten, and the newest one is past the head.
+        let mut long = String::from(r#"{"type":"user","cwd":"/Users/x/proj","message":{"content":"<command-name>/model</command-name>"}}"#);
+        long += "\n";
+        long += r#"{"type":"ai-title","aiTitle":"旧标题"}"#;
+        long += "\n";
+        let filler = format!(r#"{{"type":"assistant","message":{{"content":"{}"}}}}"#, "x".repeat(1000)) + "\n";
+        while long.len() < HEAD + 300 * 1024 {
+            long += &filler;
+        }
+        long += r#"{"type":"ai-title","aiTitle":"新标题"}"#;
+        long += "\n";
+        long += &filler.repeat(10);
+        fs::write(proj.join("long.jsonl"), &long).unwrap();
+        let found = scan_claude(&root, UNIX_EPOCH);
+        let title = |id: &str| found.iter().find(|s| s.agent_session_id == id).unwrap().title.clone();
+        assert_eq!(title("sdk"), "执行KAN-199测试基线");
+        assert_eq!(title("long"), "新标题");
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn codex_title_falls_back_to_the_first_typed_prompt() {
+        let root = std::env::temp_dir().join(format!("wbcore-codexp-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let day = root.join("sessions/2026/10/15");
+        fs::create_dir_all(&day).unwrap();
+        let user = |t: &str| format!(r#"{{"type":"response_item","payload":{{"type":"message","role":"user","content":[{{"type":"input_text","text":"{t}"}}]}}}}"#);
+        fs::write(
+            day.join("rollout-1.jsonl"),
+            [
+                r#"{"type":"session_meta","payload":{"id":"c1","cwd":"/tmp/p","thread_source":"user"}}"#.to_string(),
+                user("# AGENTS.md instructions for /tmp/p"),
+                user("<environment_context><cwd>/tmp/p</cwd></environment_context>"),
+                user("修一下登录页"),
+            ]
+            .join("\n"),
+        )
+        .unwrap();
+        let found = scan_codex(&root, UNIX_EPOCH);
+        assert_eq!(found[0].title, "修一下登录页");
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn quoted_chat_messages_are_titled_by_the_reply() {
+        assert_eq!(unquote("[Quoted message from User]:\n@bot 汇报一下\n\n\n你帮 claude 合并一下"), "你帮 claude 合并一下");
+        assert_eq!(unquote("[Quoted message from User]:\n@bot 你能做什么"), "@bot 你能做什么");
+        assert_eq!(unquote("[x] 不是标签\n第二行"), "[x] 不是标签\n第二行");
     }
 }

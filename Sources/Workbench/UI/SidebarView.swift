@@ -3,7 +3,8 @@
 //          InboxPopover and the WorkspaceSwitcher.
 // @deps    AppKit (NSOutlineView), Store, Menus, Widgets, InboxPopover.
 // @gotcha  Expansion state is AppKit's autosave (per-workspace autosaveName), not app state; outline items
-//          need stable identity (keyed p:/w:/s:). Covered by SidebarTests. See docs/modules/ui/README.md
+//          need stable identity (keyed p:/w:/s:); rows first listed after a reload open expanded.
+//          Covered by SidebarTests. See docs/modules/ui/README.md
 
 import AppKit
 
@@ -43,6 +44,7 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
     private var clock: Timer?
     private var loadedWorkspace: String?
     private(set) var expanded = Set<String>()     // kept from expand/collapse notifications (hidden children included)
+    private var groupKeys = Set<String>()         // project / worktree rows already listed in this workspace
     private var swipeAccum: CGFloat = 0
     private var swipeLocked = false
 
@@ -550,11 +552,19 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
         }
     }
 
-    /// Data changed within the current workspace: reload, keeping whatever is expanded.
+    /// Project and worktree rows as the data stands now (parents first).
+    private func currentGroupKeys() -> Set<String> {
+        Set(children(of: nil).flatMap { p in [p.key] + children(of: p).filter { $0.key.hasPrefix("w:") }.map(\.key) })
+    }
+
+    /// Data changed within the current workspace: reload, keeping whatever is expanded. Rows listed for the
+    /// first time open, so a session an outside agent starts in a fresh worktree is not folded away.
     private func reload() {
-        let keys = expanded
         outline.reloadData()
-        expand(keys: keys)
+        let now = currentGroupKeys()
+        expanded.formUnion(now.subtracting(groupKeys))
+        groupKeys = now
+        expand(keys: expanded)
         noteVisibleExpansion()
         switcher.update(store)
         needsLayout = true
@@ -570,6 +580,7 @@ final class SidebarView: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate 
         outline.reloadData()
         if firstTime { outline.expandItem(nil, expandChildren: true) }
         noteVisibleExpansion()
+        groupKeys = currentGroupKeys()
         loadedWorkspace = w.id
         switcher.update(store)
         applyTint(w, animated: animated)

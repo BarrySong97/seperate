@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let store = Store()
     private var main: MainWindowController?
     private var refreshTimer: Timer?
+    private var sessionWatcher: SessionWatcher?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         GhosttyRuntime.shared.start()
@@ -60,6 +61,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.store.refresh() }
         }
+        // New transcripts (agents started outside Seperate) show up right away; the timer catches the rest.
+        sessionWatcher = SessionWatcher { [weak self] in self?.store.refresh() }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }

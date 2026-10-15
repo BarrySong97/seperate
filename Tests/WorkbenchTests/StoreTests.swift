@@ -206,6 +206,33 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(s.active.projectRoots, [f[0], f[1]])
     }
 
+    /// Regression: sessions started in the app kept their placeholder name ("Claude Code 6") and the time
+    /// they were opened, so a renamed or later-continued conversation looked stale or got folded away.
+    @MainActor func testKeptSessionsFollowTheScansTitleAndTime() throws {
+        let p = folders(1)[0]
+        let s = Store()
+        s.addProject(path: p)
+        let wt = try XCTUnwrap(s.worktrees.first)
+        s.newSession(.claude, in: wt)
+        let id = try XCTUnwrap(s.created.first?.id)
+        XCTAssertEqual(s.session(id)?.title, "Claude Code 1")
+        func scanned(_ title: String, _ at: Date) -> AgentSession {
+            AgentSession(id: "claude:abc", kind: .claude, agentSessionID: "abc", cwd: wt.path, title: title, lastActivity: at)
+        }
+        let start = Date()
+        s.applyScan([scanned("修登录", start)], projects: s.projects, worktrees: s.worktrees)
+        XCTAssertEqual(s.session(id)?.agentSessionID, "abc", "adopted")
+        XCTAssertEqual(s.session(id)?.title, "修登录", "the real title replaces the placeholder")
+
+        let later = start.addingTimeInterval(3600)
+        s.applyScan([scanned("登录页重构", later)], projects: s.projects, worktrees: s.worktrees)
+        XCTAssertEqual(s.session(id)?.title, "登录页重构", "the agent renamed it")
+        XCTAssertEqual(s.session(id)?.lastActivity, later, "it went on elsewhere: newer activity counts")
+
+        s.applyScan([scanned(Core.untitled("claude"), later)], projects: s.projects, worktrees: s.worktrees)
+        XCTAssertEqual(s.session(id)?.title, "登录页重构", "a scan with no title keeps the one we have")
+    }
+
     /// A real repo with one commit on main (skips when git is unavailable).
     private func repo(_ name: String) throws -> String {
         let r = dir.appendingPathComponent(name).path

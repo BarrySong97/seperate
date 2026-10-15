@@ -59,6 +59,7 @@ final class Store {
     private var observers: [UUID: (Change) -> Void] = [:]
     private var saveWork: DispatchWorkItem?
     private var refreshing = false
+    private var refreshQueued = false
     private var dbReady = false
     private var pinnedRows: [String: Core.DBState.SessionRow] = [:]   // pins of sessions the scan has not found (yet)
 
@@ -76,7 +77,8 @@ final class Store {
             MainActor.assumeIsolated { self?.agentEvent(info) }
         }
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.markSeen() }
+            // Sessions started elsewhere while you were away show up as soon as you come back.
+            MainActor.assumeIsolated { self?.markSeen(); self?.refresh() }
         }
         notifier.start()
         notifier.onOpen = { [weak self] id in
@@ -1011,8 +1013,9 @@ final class Store {
 
     // MARK: Refresh (Rust core, off the main thread; views are told only when something changed)
 
+    /// A request while a scan is running is queued (once), so a transcript written mid-scan is not missed.
     func refresh() {
-        guard !refreshing else { return }
+        guard !refreshing else { refreshQueued = true; return }
         refreshing = true
         let roots = allRoots, aliases = self.aliases, order = worktreeOrder, hidden = Set(hiddenWorktrees.keys)
         Task.detached(priority: .utility) {
@@ -1021,13 +1024,34 @@ final class Store {
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 self.refreshing = false
-                var changed = false
-                if found != self.discovered { self.discovered = found; changed = true }
-                if ps != self.projects || ws != self.worktrees { self.projects = ps; self.worktrees = ws; changed = true }
-                if self.adoptAgentIDs() { changed = true }
-                if changed { self.rebuildIndex(); self.notify(.projects) }
+                self.applyScan(found, projects: ps, worktrees: ws)
+                if self.refreshQueued { self.refreshQueued = false; self.refresh() }
             }
         }
+    }
+
+    /// Takes a scan's result; views hear about it only when something changed. Internal for tests.
+    func applyScan(_ found: [AgentSession], projects ps: [Project], worktrees ws: [Worktree]) {
+        var changed = false
+        if found != discovered { discovered = found; changed = true }
+        if ps != projects || ws != worktrees { projects = ps; worktrees = ws; changed = true }
+        if adoptAgentIDs() { changed = true }
+        if syncCreated() { changed = true }
+        if changed { rebuildIndex(); notify(.projects) }
+    }
+
+    /// Sessions the app keeps (started or opened here) take the newest title and activity time from the
+    /// scan: the agent names its conversation after it starts, and it may go on elsewhere (another app, a
+    /// bot) after you closed its tab. A scan without a real title keeps the one we have.
+    private func syncCreated() -> Bool {
+        let byAgent = Dictionary(discovered.compactMap { s in s.agentSessionID.map { ($0, s) } }, uniquingKeysWith: { a, b in a.lastActivity >= b.lastActivity ? a : b })
+        var changed = false
+        for i in created.indices {
+            guard let aid = created[i].agentSessionID, let found = byAgent[aid] else { continue }
+            if found.lastActivity > created[i].lastActivity { created[i].lastActivity = found.lastActivity; changed = true }
+            if found.title != Core.untitled(found.kind.rawValue), found.title != created[i].title { created[i].title = found.title; changed = true }
+        }
+        return changed
     }
 
     func refreshProjects() {
@@ -1066,7 +1090,7 @@ final class Store {
                           && !claimed.contains($0.agentSessionID ?? "") })
                 .min(by: { $0.lastActivity < $1.lastActivity }) {
                 created[i].agentSessionID = match.agentSessionID
-                if liveTitles[s.id] == nil { created[i].title = match.title }
+                created[i].title = match.title   // the running tab still shows its live title
                 claimed.insert(match.agentSessionID ?? "")
                 changed = true
             }

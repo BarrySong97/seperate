@@ -21,7 +21,7 @@
 ## 数据流
 - 所有调用都是同步的:参数是 C 字符串,返回值是 Rust 分配的 JSON C 字符串(或 NULL),Swift 解码后 `wb_free`。
 - 数据库:`Store.load` 调 `Core.dbOpen(<数据目录>/seperate.db)` → `dbLoad` 得到整份 `DBState`;保存时 `dbSave` 把整份状态序列化后在一个事务里整体替换。数据目录默认 `~/Library/Application Support/Workbench/`,可用 `SEPERATE_DATA_DIR` 覆盖;`WORKBENCH_DEMO` 用 `seperate-demo.db`。打不开时退回旧的 `state.json`,首次成功导入后改名为 `state.json.bak`。
-- 会话:`Core.scanSessions()`(在 `Store` 里 `Task.detached` 后台跑)→ `sessions::scan_all(home, 无年龄限制)` → Codex `~/.codex/sessions/**/rollout-*.jsonl` 首行 `session_meta` + `session_index.jsonl` 标题;Claude `~/.claude/projects/<编码 cwd>/<uuid>.jsonl` 读前 256 KB 取 cwd 和标题。
+- 会话:`Core.scanSessions()`(在 `Store` 里 `Task.detached` 后台跑)→ `sessions::scan_all(home, 无年龄限制)` → Codex `~/.codex/sessions/**/rollout-*.jsonl` 首行 `session_meta` + `session_index.jsonl` 标题;Claude `~/.claude/projects/<编码 cwd>/<uuid>.jsonl` 读前 256 KB 取 cwd 和第一句话,再从文件末尾往前(256 KB → 1 MB → 4 MB)找最新的 `ai-title` / `custom-title` / `agent-name`。每个文件的结果按路径缓存,大小和修改时间都没变就不再读(第二次以后的扫描约 8 ms)。
 - 导入:`agents::search` 复用会话扫描结果 → `git::repo_info` 折叠到主仓库根 → 评分排序。
 
 ## 对外接口
@@ -41,5 +41,5 @@
 - **不要为发现逻辑 spawn git**:本机每次起进程约 70 ms,仓库/worktree 发现全靠读 `.git` 文件;只有 status、增删 worktree/分支、新建项目这些低频操作才调 `/usr/bin/git`(写死路径)。
 - **分支删除只用 `-d`**:未合并分支永不删除。`worktree_remove` 在目录已不存在或 git 报 "is not a working tree" 时改走 `git worktree prune`。
 - **线程**:`Core` 调用可在任意线程;DB 用全局 `Mutex<Option<Connection>>` 串行化,未 open 时 `wb_db_load` 返回 NULL。拼音缓存用 `NSLock` + `nonisolated(unsafe)`。`agents::search` 结果按 home 缓存 10 秒,避免每次按键重扫磁盘。
-- **会话格式是 agent 私有格式**:Codex 以 `thread_source != "user"` 过滤子线程(审批 reviewer 等);Claude 标题优先 `summary`,否则第一条非 meta、不以 `<` 开头的用户输入。上游格式变化会静默丢会话。
+- **会话格式是 agent 私有格式**:Codex 以 `thread_source != "user"` 过滤子线程(审批 reviewer 等)。**标题**:Claude 依次取最新的 `custom-title` → `ai-title`(Claude Code 自己起、会随对话改写,所以要读文件尾)→ `agent-name` → `summary` → 第一句用户输入;Codex 取 `session_index.jsonl` 的 `thread_name`,没有就取 rollout 里第一条用户输入(跳过 `<environment_context>` 等带尖括号的上下文和 `# AGENTS.md instructions`)。用户输入既可能是字符串,也可能是文本块列表(Agent SDK、Codex)。飞书等聊天桥转发的「[Quoted message from User]:\n引用\n\n回复」取最后一段回复。上游格式变化会静默丢会话或标题。
 - **crate 形态**:`staticlib + rlib`,release 开 LTO;`rusqlite` 使用 bundled SQLite。测试 `cargo test` 中部分用例需要 `/usr/bin/git`,缺失时自动跳过。
