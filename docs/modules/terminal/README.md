@@ -26,6 +26,7 @@
 - 环境变量:默认给 shell 注入 `WORKBENCH_SESSION=<sessionID>`(传入自定义 env 时以传入为准)
 
 ## 注意事项
+- **新终端继承字号**:`TerminalView` 记住最后获得焦点的终端,新终端创建时用 `ghostty_surface_inherited_config` 只取它的 `font_size`(⌘+/⌘- 调过的大小),和 Ghostty 的新 Tab / 分屏一样;用户关掉 `window-inherit-font-size` 时返回 0,即用配置字号。
 - **线程**:所有 `ghostty_*` 调用必须在主线程;只有 `wakeup_cb` 在后台到达,它只做 `DispatchQueue.main.async { tick() }`。其余回调用 `MainActor.assumeIsolated`,依赖 Ghostty 在主线程(tick 内)回调。
 - **userdata 是 unretained 指针**:surface 的 userdata 和 macOS nsview 都是 `Unmanaged.passUnretained(self)`。`TerminalView` 释放前必须先 `destroy()`(`ghostty_surface_free`),否则回调会拿到悬垂指针。
 - **不能在 Ghostty 回调里释放 surface**:`surfaceRequestedClose` 故意 `DispatchQueue.main.async` 再通知 `onClose`。

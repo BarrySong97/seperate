@@ -40,6 +40,7 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
     init(sessionID: String, cwd: String, initialInput: String?, env extra: [String: String] = [:]) {
         self.sessionID = sessionID
         pending = (cwd, initialInput, extra.isEmpty ? ["WORKBENCH_SESSION": sessionID] : extra)
+        fontSource = Self.lastFocused
         super.init(frame: .zero)
         // Only files/images: tab and pane drags carry plain strings and must reach the PaneView behind.
         registerForDraggedTypes([.fileURL, .png, .tiff])
@@ -49,6 +50,11 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
     /// off-screen would report a placeholder width, and the agent's first screen (Claude's welcome
     /// box, the prompt) would be laid out that narrow and stay squeezed in the scrollback.
     private var pending: (cwd: String, input: String?, env: [String: String])?
+
+    /// The terminal the user was last typing in. A new terminal takes its ⌘+/⌘- font size, as new tabs
+    /// and splits do in Ghostty (honours the user's `window-inherit-font-size`, on by default).
+    private static weak var lastFocused: TerminalView?
+    private weak var fontSource: TerminalView?
 
     private func startIfReady() {
         guard surface == nil, let p = pending, let window, bounds.width >= 40, bounds.height >= 40,
@@ -60,6 +66,10 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
         cfg.userdata = Unmanaged.passUnretained(self).toOpaque()
         cfg.scale_factor = Double(window.backingScaleFactor)
         cfg.context = GHOSTTY_SURFACE_CONTEXT_TAB
+        if let parent = fontSource?.surface {
+            cfg.font_size = ghostty_surface_inherited_config(parent, GHOSTTY_SURFACE_CONTEXT_TAB).font_size   // 0 = config size
+        }
+        fontSource = nil
         let pairs = p.env.map { (strdup($0.key)!, strdup($0.value)!) }
         defer { pairs.forEach { free($0.0); free($0.1) } }
         var env = pairs.map { ghostty_env_var_s(key: $0.0, value: $0.1) }
@@ -210,6 +220,7 @@ final class TerminalView: NSView, @preconcurrency NSTextInputClient {
 
     override func becomeFirstResponder() -> Bool {
         let ok = super.becomeFirstResponder()
+        if ok { Self.lastFocused = self }
         if ok, let surface { ghostty_surface_set_focus(surface, true); onFocus?() }
         return ok
     }
