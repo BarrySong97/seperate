@@ -180,10 +180,99 @@ function LanguageMenuUI({ u }: { u: Dict["ui"] }) {
   );
 }
 
+/* ——— Claude Code and Codex controlling Seperate through the `seperate` command ——— */
+
+// Codex's own logo, as the app shows it on Codex sessions (bundled from ChatGPT.app by scripts/build-app.sh).
+// OpenAI's artwork: hosted on R2 like the other changelog media, not committed to the repo.
+const codexLogo = "https://blogassets.4real.ink/seperate/e696f65b77cff13e238dd1e7.webp";
+
+// The app's agent icons (Icons.agent in Sources/Workbench/UI/Widgets.swift): Codex's logo, Claude's asterisk
+// drawn on a 16-unit grid.
+function AgentMark({ kind, size }: { kind: "claude" | "codex"; size: number }) {
+  if (kind === "codex") {
+    // Like the app, crop the ~9% transparent margin so it lines up with the other icons.
+    return (
+      <span className="inline-block shrink-0 overflow-hidden" style={{ width: size + 1, height: size + 1 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={codexLogo} alt="" className="max-w-none" style={{ width: (size + 1) / 0.82, height: (size + 1) / 0.82, margin: -((size + 1) / 0.82) * 0.09 }} />
+      </span>
+    );
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="#e8916c" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 2v12M2.8 5l10.4 6M2.8 11l10.4-6" />
+    </svg>
+  );
+}
+
+function CLIControlUI({ u }: { u: UI }) {
+  const agent = (kind: "claude" | "codex", name: string, top: number) => (
+    <div className={`${ui} ${surface} absolute left-0 flex h-[104px] w-[128px] flex-col items-center justify-center gap-3`} style={{ top }}>
+      <AgentMark kind={kind} size={34} />
+      <span className="text-[12.5px] font-medium">{name}</span>
+    </div>
+  );
+  const line = (w: number, c = "#4a4b44") => <span className="h-[4px] rounded-full" style={{ width: `${w}%`, background: c }} />;
+  const pane = (kind: "claude" | "codex", title: string, note?: string) => (
+    <div className="flex min-w-0 flex-1 flex-col border-l border-[#34352f] first:border-l-0">
+      <div className="flex h-[24px] shrink-0 items-center gap-1.5 border-b border-[#34352f] bg-[#22231e] px-2">
+        <AgentMark kind={kind} size={11} />
+        <span className="min-w-0 truncate text-[10.5px]">{title}</span>
+      </div>
+      <div className="flex h-[18px] shrink-0 items-center border-b border-[#34352f] px-2 text-[9px] whitespace-nowrap text-[#d6d3c3]">{note}</div>
+      <div className="flex flex-col gap-[7px] px-2.5 pt-3">
+        {line(70, "#5d5e56")}{line(88)}{line(54)}{line(76, kind === "codex" ? "#3c5a3a" : "#4a4b44")}{line(46)}{line(64, "#5d5e56")}
+      </div>
+    </div>
+  );
+  return (
+    <div className="relative h-full">
+      {agent("codex", "Codex", 46)}
+      {agent("claude", "Claude Code", 180)}
+      {/* Both agents reach the window through one command. */}
+      <svg className="absolute inset-0" width="568" height="330" viewBox="0 0 568 330" fill="none" aria-hidden="true">
+        <defs>
+          <marker id="cli-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 8 4 0 8z" fill="#f5f4ec" />
+          </marker>
+        </defs>
+        <g stroke="#f5f4ec" strokeWidth="1.6" strokeDasharray="4 4" opacity="0.9">
+          <path d="M128 98 C 150 98, 150 165, 170 165" />
+          <path d="M128 232 C 150 232, 150 165, 170 165" />
+          <path d="M270 165 H 296" markerEnd="url(#cli-arrow)" />
+        </g>
+      </svg>
+      <div className={`${ui} absolute top-[141px] left-[164px] flex w-[112px] flex-col items-center gap-1.5 rounded-[10px] border border-white/15 bg-[#1e1f1a]/95 px-2 py-2 shadow-lg`}>
+        <span className="font-mono text-[12px] text-[#e8e8e2]"><span className="text-[#9ccf6c]">$</span> seperate</span>
+        <span className="text-[10.5px] whitespace-nowrap text-[#9c9d95]">{u.controlByCLI}</span>
+      </div>
+      <div className={`${ui} ${surface} absolute top-[22px] right-0 flex h-[286px] w-[262px] flex-col overflow-hidden`}>
+        <div className="flex h-[22px] shrink-0 items-center gap-[5px] border-b border-[#34352f] px-2.5">
+          <Dot color="#ec6a5e" /><Dot color="#f4bf4f" /><Dot color="#61c554" />
+          <span className="ml-2 text-[10px] text-[#9c9d95]">Seperate</span>
+        </div>
+        <div className="flex min-h-0 flex-1">
+          <div className="flex w-[50px] shrink-0 flex-col gap-2 border-r border-[#34352f] px-2 pt-2.5">
+            <Badge letter="L" color="#3f5a44" />
+            <span className="ml-1 flex items-center"><AgentMark kind="claude" size={10} /></span>
+            <span className="ml-1 flex items-center"><AgentMark kind="codex" size={10} /></span>
+            <Badge letter="P" color="#5a4a3a" />
+          </div>
+          <div className="flex min-w-0 flex-1 bg-[#272822]">
+            {pane("claude", "Claude Code 1")}
+            {pane("codex", u.fixFailingTest, u.openedByClaude)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const mocks = {
   "tab-menu": { backdrop: "green", ui: TabMenuUI },
   "skip-permissions": { backdrop: "amber", ui: SkipPermissionsUI },
   "language-menu": { backdrop: "blue", ui: LanguageMenuUI },
+  "cli-control": { backdrop: "amber", ui: CLIControlUI },
 } as const;
 
 /** `mock:<name>` in a changelog image; null for an unknown name so a typo shows nothing rather than a broken image. */
