@@ -10,7 +10,7 @@
 - `Sources/Workbench/UI/MainWindow.swift` — `MainWindowController` + `RootView`：侧栏 | (顶栏 / 工作区) 的框架布局，侧栏隐藏、贴边 peek、拖拽改宽；承载命令面板与导入面板浮层
 - `Sources/Workbench/UI/SidebarView.swift` — 项目 → Worktree → 会话的 NSOutlineView、底部「添加项目」+ 收件箱铃铛、Arc 式 Workspace 切换条（详见 [sidebar.md](./sidebar.md)）
 - `Sources/Workbench/UI/TopBarView.swift` — 顶栏：侧栏开关、Workspace 名、「N 栏 · N 个 Tab …」摘要、布局预设按钮、新版本提示
-- `Sources/Workbench/UI/WorkspaceView.swift` — 把 `store.layout` 渲染成嵌套 `SplitContainerView` / `PaneView`；分隔条拖动、拖放落点（边缘分屏 / 中间加 Tab）、空栏选择器
+- `Sources/Workbench/UI/WorkspaceView.swift` — 把 `store.layout` 渲染成嵌套 `SplitContainerView` / `PaneView`；分隔条拖动、拖放落点（边缘分屏 / 中间加 Tab）、空栏选择器（当前 Workspace 没有项目时改为「把你的项目带进来」引导：导入 Agent 用过的项目 / 选择文件夹 / 新建项目）
 - `Sources/Workbench/UI/PaneHeaderView.swift` — 每栏顶部：Tab 条（`TabView`，可拖，右键出关闭菜单）+ 来源行（项目/Worktree、`seperate` 命令行留下的「由 X 打开 / X 输入 · 时间」、状态、会话 id、Finder / 编辑器 / 复制路径 / ··· 操作）
 - `Sources/Workbench/UI/CommandPalette.swift` — ⌘K / ⌘P 窗口内浮层面板（NSTableView）
 - `Sources/Workbench/UI/PaletteSearch.swift` — 面板的数据模型：scope、entry、分组与排序（无 UI）
@@ -70,6 +70,7 @@
 - **Sheet 生命周期**：`NewProjectSheet` / `NewWorktreeSheet` 用静态 `current` 引用保活，sheet 结束时清空。
 - **批量关 Tab**：Tab 右键「关闭其他 / 左侧 / 右侧 / 所有 Tab」走 `Store.closeTabs`，只要其中有终端还在跑进程（Ghostty 的 `needs_confirm_quit`）就只弹一次确认，不逐个弹；单个「关闭 Tab」仍走 `closeTab`。
 - **危险操作**：「从磁盘删除 Worktree」执行 `git worktree remove`，有未提交改动时默认拒绝，只能显式强制；「从 Seperate 移除」只隐藏，不动文件和 git 登记。
+- **空栏引导看状态不看「首次启动」**：`EmptyPaneView` 只按 `store.visibleProjects.isEmpty` 决定显示引导还是最近 Session 列表，不另存首启标记；`.projects` 通知经 `PaneView.update` 调 `reload()`，内容没变不重建（避免吞点击）。
 - 侧栏宽度存 `UserDefaults["sidebarWidth"]`，范围 180–480，且保证工作区至少留 360pt。
 
 ## 子页

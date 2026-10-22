@@ -1,4 +1,5 @@
-// @purpose Renders store.layout as nested split containers of panes; drop targets, dividers, empty-pane picker.
+// @purpose Renders store.layout as nested split containers of panes; drop targets, dividers, empty-pane
+//          picker (or "bring in your projects" while the workspace has none).
 // @role    Created by MainWindowController; observes Store (layout / session / projects / workspace) and
 //          calls Store for focus, move, setSizes, addTab.
 // @deps    AppKit, Store, LayoutModel, PaneHeaderView, TerminalView (owned by Store).
@@ -280,7 +281,7 @@ final class PaneView: NSView {
 
     func update(_ pane: Pane) {
         header.update(pane, focused: store.layout.focusedPaneID == paneID)
-        guard pane.active != activeSession || body.subviews.isEmpty else { return }
+        guard pane.active != activeSession || body.subviews.isEmpty else { empty?.reload(); return }
         activeSession = pane.active
         body.subviews.forEach { $0.removeFromSuperview() }
         if let sid = pane.active, let t = store.terminal(for: sid) {
@@ -411,15 +412,21 @@ final class DropOverlay: NSView {
     }
 }
 
-/// Shown in a pane with no tabs: recent sessions that are not open anywhere.
+/// Shown in a pane with no tabs: recent sessions that are not open anywhere. While the workspace has
+/// no projects (first launch, a new workspace) there are none to show, so it offers to bring projects
+/// in instead — importing the ones your agents used first.
 @MainActor
 final class EmptyPaneView: NSView {
     private let store: Store
     private let paneID: String
-    private let heading = NSTextField.label(tr("放一个 Session 进来", "Put a session here"), font: NSFont.systemFont(ofSize: 13, weight: .semibold))
-    private let hint = NSTextField.label(tr("从左侧拖进来，或者选一个：", "Drag one in from the left, or pick one:"), font: NSFont.systemFont(ofSize: 12), color: Theme.muted)
+    private let heading = NSTextField.label(font: NSFont.systemFont(ofSize: 13, weight: .semibold))
+    private let hint = NSTextField(wrappingLabelWithString: "")
     private let list = NSView()
     private var rows: [PickRow] = []
+    private let importButton = NSButton(title: tr("从 Agent 使用过的项目导入…", "Import Projects Your Agents Used…"), target: nil, action: nil)
+    private let folderButton = NSButton(title: tr("选择文件夹…", "Choose Folder…"), target: nil, action: nil)
+    private let newButton = NSButton(title: tr("新建项目…", "New Project…"), target: nil, action: nil)
+    private var shown: [String]?   // what is on screen: "onboarding" or the listed session ids
 
     init(store: Store, paneID: String) {
         self.store = store
@@ -427,34 +434,77 @@ final class EmptyPaneView: NSView {
         super.init(frame: .zero)
         wantsLayer = true
         layer?.backgroundColor = Theme.pane.cgColor
+        hint.font = NSFont.systemFont(ofSize: 12)
+        hint.textColor = Theme.muted
+        hint.isSelectable = false
         list.wantsLayer = true
         list.layer?.cornerRadius = 9
         list.layer?.borderWidth = 1
         list.layer?.borderColor = Theme.line.cgColor
-        [heading, hint, list].forEach(addSubview)
+        for (b, sel) in [(importButton, #selector(importProjects)), (folderButton, #selector(chooseFolder)), (newButton, #selector(newProject))] {
+            b.bezelStyle = .rounded
+            b.target = self
+            b.action = sel
+        }
+        [heading, hint, list, importButton, folderButton, newButton].forEach(addSubview)
+        reload()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+    override var isFlipped: Bool { true }
+
+    private var onboarding: Bool { store.visibleProjects.isEmpty }
+
+    /// Re-reads the store; rebuilds only when what it shows changed, so a click is never lost to a rebuild.
+    func reload() {
         let open = Set(store.layout.openSessionIDs)
-        let recent = store.sessionsByWorktree.values.flatMap { $0 }.filter { !open.contains($0.id) }
-            .sorted { $0.lastActivity > $1.lastActivity }.prefix(6)
+        let recent = onboarding ? [] : Array(store.sessionsByWorktree.values.flatMap { $0 }.filter { !open.contains($0.id) }
+            .sorted { $0.lastActivity > $1.lastActivity }.prefix(6))
+        let wanted = onboarding ? ["onboarding"] : recent.map(\.id)
+        guard wanted != shown else { return }
+        shown = wanted
+        rows.forEach { $0.removeFromSuperview() }
+        rows = []
+        if onboarding {
+            heading.stringValue = tr("把你的项目带进来", "Bring in your projects")
+            hint.stringValue = tr("Claude Code 和 Codex 用过的项目可以一键导入，也可以选一个文件夹或新建项目。",
+                                  "Import the projects Claude Code and Codex have worked in, or choose a folder or start a new project.")
+        } else {
+            heading.stringValue = tr("放一个 Session 进来", "Put a session here")
+            hint.stringValue = recent.isEmpty ? tr("从左侧拖一个进来。", "Drag one in from the left.") : tr("从左侧拖进来，或者选一个：", "Drag one in from the left, or pick one:")
+        }
         for s in recent {
             let r = PickRow(kind: s.kind, title: store.title(of: s), detail: (store.worktree(for: s).map { store.projectName(of: $0) + " · " } ?? "") + RelativeTime.short(s.lastActivity))
             r.onPick = { [weak self] in guard let self else { return }; self.store.addTab(s.id, to: self.paneID) }
             list.addSubview(r)
             rows.append(r)
         }
+        list.isHidden = rows.isEmpty
+        [importButton, folderButton, newButton].forEach { $0.isHidden = !onboarding }
+        needsLayout = true
     }
 
-    required init?(coder: NSCoder) { fatalError() }
-    override var isFlipped: Bool { true }
+    @objc private func importProjects() { store.showImport() }
+    @objc private func chooseFolder() { store.pickProject() }
+    @objc private func newProject() { store.promptNewProject() }
 
     override func layout() {
         super.layout()
         let w: CGFloat = min(360, bounds.width - 32), rowH: CGFloat = 30
-        let total = 20 + 20 + 10 + CGFloat(rows.count) * rowH + 8
+        let hintH = ceil(hint.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: w, height: .greatestFiniteMagnitude)).height ?? 16)
+        let bodyH: CGFloat = onboarding ? 28 + 8 + 28 : rows.isEmpty ? 0 : CGFloat(rows.count) * rowH + 8
+        let total = 22 + hintH + 12 + bodyH
         let x = (bounds.width - w) / 2, y0 = max(20, (bounds.height - total) / 2)
         heading.frame = NSRect(x: x, y: y0, width: w, height: 18)
-        hint.frame = NSRect(x: x, y: y0 + 22, width: w, height: 16)
-        list.frame = NSRect(x: x, y: y0 + 48, width: w, height: CGFloat(rows.count) * rowH + 8)
+        hint.frame = NSRect(x: x, y: y0 + 22, width: w, height: hintH)
+        let top = y0 + 22 + hintH + 12
+        list.frame = NSRect(x: x, y: top, width: w, height: CGFloat(rows.count) * rowH + 8)
         for (i, r) in rows.enumerated() { r.frame = NSRect(x: 4, y: 4 + CGFloat(i) * rowH, width: w - 8, height: rowH) }
+        // Import, the quickest way in, on its own row; folder / new project share the one below.
+        importButton.frame = NSRect(x: x, y: top, width: w, height: 28)
+        let half = (w - 8) / 2
+        folderButton.frame = NSRect(x: x, y: top + 36, width: half, height: 28)
+        newButton.frame = NSRect(x: x + half + 8, y: top + 36, width: half, height: 28)
     }
 }
 
