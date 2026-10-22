@@ -11,7 +11,7 @@ runs:
       run: echo "hash=$(grep -vE '^[[:space:]]*(#|$)' scripts/setup-ghostty.sh | shasum -a 256 | cut -c1-16)" >> "$GITHUB_OUTPUT"
     - name: Cache GhosttyKit
       id: ghostty
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: |
           Vendor/GhosttyKit.xcframework
